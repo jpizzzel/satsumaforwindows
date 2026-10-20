@@ -86,6 +86,29 @@ public sealed class DocumentAndArchiveTests : IDisposable
     }
 
     [Fact]
+    public async Task Extract_refuses_entries_that_escape_the_folder()
+    {
+        var archive = _files.PathOf("evil.zip");
+        using (var zip = ZipFile.Open(archive, ZipArchiveMode.Create))
+        {
+            using var writer = new StreamWriter(zip.CreateEntry("../escaped.txt").Open());
+            writer.Write("gotcha");
+        }
+
+        try
+        {
+            await new ExtractOperation().RunAsync(_files.Context(archive));
+        }
+        catch (Exception)
+        {
+            // Refusing the whole archive is fine too; what matters is that nothing lands outside.
+        }
+
+        Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(_files.Root)!, "escaped.txt")));
+        Assert.False(File.Exists(_files.PathOf("escaped.txt")));
+    }
+
+    [Fact]
     public async Task Extract_names_tarball_folders_without_tar()
     {
         var source = Directory.CreateDirectory(_files.PathOf("src")).FullName;

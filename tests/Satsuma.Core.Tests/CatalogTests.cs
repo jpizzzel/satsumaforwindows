@@ -81,6 +81,16 @@ public sealed class CatalogTests : IDisposable
     }
 
     [Fact]
+    public void Read_only_image_formats_get_conversions_but_no_edits()
+    {
+        Assert.Contains("JPG", Labels(WheelMode.Convert, "raw.dng"));
+        Assert.DoesNotContain("Compress", Labels(WheelMode.Tools, "raw.dng"));
+        Assert.DoesNotContain("Rotate", Labels(WheelMode.Tools, "logo.svg"));
+        Assert.Contains("Compress", Labels(WheelMode.Tools, "photo.JPEG"));
+        Assert.Contains("Compress", Labels(WheelMode.Tools, "photo.tif"));
+    }
+
+    [Fact]
     public void Core_catalog_has_no_actions()
     {
         Assert.Empty(Labels(WheelMode.Actions, "a.pdf"));
@@ -96,6 +106,19 @@ public sealed class CatalogTests : IDisposable
         File.WriteAllText(_files.PathOf("photo.png"), "");
         Assert.Equal(_files.PathOf("photo (1).png"), locator.For(input, ".png"));
         Assert.Equal(_files.PathOf("photo (compressed).heic"), locator.For(input, "heic", "compressed"));
+    }
+
+    [Fact]
+    public void Same_name_keeps_dotted_folder_names_whole()
+    {
+        var folder = Directory.CreateDirectory(_files.PathOf("v1.2 release")).FullName;
+        var target = Path.Combine(_files.Root, "dest");
+        var locator = new OutputLocator { Folder = target };
+
+        Assert.Equal(Path.Combine(target, "v1.2 release"), locator.SameName(folder));
+        Directory.CreateDirectory(Path.Combine(target, "v1.2 release"));
+        Assert.Equal(Path.Combine(target, "v1.2 release (1)"), locator.SameName(folder));
+        Assert.Equal(Path.Combine(target, "notes.txt"), locator.SameName(_files.PathOf("notes.txt")));
     }
 
     [Fact]

@@ -1,9 +1,7 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Satsuma.App/Satsuma.App.csproj" />
     <Project Path="src/Satsuma.Core/Satsuma.Core.csproj" />
-  </Folder>
-  <Folder Name="/src/Satsuma.App/">
-    <Project Path="src/Satsuma.App/Satsuma.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Satsuma.Core.Tests/Satsuma.Core.Tests.csproj" />

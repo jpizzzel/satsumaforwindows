@@ -480,3 +480,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Satsuma
+/tools/
+/self-test/
+build/icon-preview.png

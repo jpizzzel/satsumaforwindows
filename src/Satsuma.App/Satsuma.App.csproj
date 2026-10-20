@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- The Windows 10 SDK target brings in WinRT APIs for PDF rendering and the Share sheet. -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <UseWPF>true</UseWPF>
+    <!-- Only for the tray icon (NotifyIcon). -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>Satsuma</AssemblyName>
+    <RootNamespace>Satsuma.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\Satsuma.ico</ApplicationIcon>
+    <Version>0.1.0</Version>
+    <Product>Satsuma</Product>
+    <Description>Convert and act on files by holding a key while you drag them.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WinForms is only here for the tray icon; keep its names out of the WPF code. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Satsuma.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Satsuma.Core\Satsuma.Core.csproj" />
+  </ItemGroup>
+
+</Project>

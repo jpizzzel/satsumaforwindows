@@ -1,0 +1,65 @@
+<Window x:Class="Satsuma.App.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Satsuma"
+        Width="520"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        FontSize="13">
+    <StackPanel Margin="24,20,24,20">
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+            <Image Source="pack://application:,,,/Assets/Satsuma.ico" Width="36" Height="36" Margin="0,0,12,0" />
+            <TextBlock Text="Satsuma" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock TextWrapping="Wrap" Foreground="#555" Margin="0,4,0,16">
+            Start dragging any file, then hold a key. A wheel opens under the pointer: drop the file on what you
+            want. Results are saved next to the original. Drop on the middle, or let go of the key, to cancel.
+        </TextBlock>
+
+        <GroupBox Header="Wheels" Padding="10,8">
+            <StackPanel>
+                <CheckBox x:Name="ConvertEnabled" Margin="0,2">
+                    <TextBlock><Bold>Shift</Bold>: Convert to another format (images, video, audio, PDF, subtitles)</TextBlock>
+                </CheckBox>
+                <CheckBox x:Name="ToolsEnabled" Margin="0,6,0,2">
+                    <TextBlock><Bold>Ctrl</Bold>: Tools (compress, resize, rotate, merge, split, zip, extract...)</TextBlock>
+                </CheckBox>
+                <CheckBox x:Name="ActionsEnabled" Margin="0,6,0,2">
+                    <TextBlock><Bold>Alt</Bold>: Actions (copy, move, copy path, float, share, terminal)</TextBlock>
+                </CheckBox>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Results" Padding="10,8" Margin="0,12,0,0">
+            <StackPanel>
+                <RadioButton x:Name="SaveBeside" Content="Save next to the original file" GroupName="Output" Margin="0,2" />
+                <DockPanel Margin="0,6,0,2">
+                    <Button DockPanel.Dock="Right" Content="Choose..." Padding="10,2" Click="ChooseFolder_Click" />
+                    <RadioButton x:Name="SaveInFolder" GroupName="Output" VerticalAlignment="Center">
+                        <TextBlock x:Name="FolderLabel" TextTrimming="CharacterEllipsis" />
+                    </RadioButton>
+                </DockPanel>
+                <DockPanel Margin="0,12,0,0">
+                    <TextBlock Text="Image quality" VerticalAlignment="Center" Width="100" />
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=Quality, StringFormat={}{0:0}}"
+                               Width="30" TextAlignment="Right" VerticalAlignment="Center" />
+                    <Slider x:Name="Quality" Minimum="40" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                            VerticalAlignment="Center" />
+                </DockPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <CheckBox x:Name="LaunchAtStartup" Content="Start Satsuma when I sign in" Margin="2,14,0,0" />
+
+        <TextBlock x:Name="FfmpegStatus" TextWrapping="Wrap" Foreground="#666" FontSize="12" Margin="2,14,0,0" />
+
+        <DockPanel Margin="0,18,0,0" LastChildFill="False">
+            <TextBlock DockPanel.Dock="Left" Foreground="#888" FontSize="12" VerticalAlignment="Center">
+                Satsuma keeps running in the system tray.
+            </TextBlock>
+            <Button DockPanel.Dock="Right" Content="Done" IsDefault="True" Padding="20,4" Click="Done_Click" />
+        </DockPanel>
+    </StackPanel>
+</Window>

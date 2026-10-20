@@ -15,7 +15,17 @@ public sealed class OutputLocator
         var name = Path.GetFileNameWithoutExtension(Path.TrimEndingDirectorySeparator(input));
         if (suffix is not null)
             name += $" ({suffix})";
-        return Unique(Path.Combine(DirectoryFor(input), name), "." + extension.TrimStart('.'));
+        extension = extension.TrimStart('.');
+        return Unique(Path.Combine(DirectoryFor(input), name), extension.Length == 0 ? "" : "." + extension);
+    }
+
+    /// <summary>Same file or folder name in the output folder, made unique. Used when copying or moving.</summary>
+    public string SameName(string input)
+    {
+        input = Path.TrimEndingDirectorySeparator(input);
+        if (Directory.Exists(input))
+            return Unique(Path.Combine(DirectoryFor(input), Path.GetFileName(input)), "");
+        return Unique(Path.Combine(DirectoryFor(input), Path.GetFileNameWithoutExtension(input)), Path.GetExtension(input));
     }
 
     /// <summary>Path for a result built from several inputs, e.g. merged PDFs.</summary>

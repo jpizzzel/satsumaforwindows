@@ -63,8 +63,17 @@ public abstract class ImageEditOperation : PerFileOperation
 {
     protected abstract string Suffix { get; }
 
+    /// <summary>Edits save in the original format, so camera RAW files and SVGs (read-only here) are left out.</summary>
     public override bool AppliesTo(IReadOnlyList<string> inputs) =>
-        FileKinds.All(inputs, FileKind.Image) && inputs.All(i => !FileKinds.SameFormat(Path.GetExtension(i), ".svg"));
+        FileKinds.All(inputs, FileKind.Image) && inputs.All(i => CanSaveAs(Path.GetExtension(i)));
+
+    static bool CanSaveAs(string extension)
+    {
+        var name = extension.TrimStart('.');
+        return !name.Equals("svg", StringComparison.OrdinalIgnoreCase)
+            && Enum.TryParse<MagickFormat>(name, ignoreCase: true, out var format)
+            && ImageConvertOperation.CanWrite(format);
+    }
 
     protected abstract void Edit(IMagickImage<byte> image, JobContext context);
 

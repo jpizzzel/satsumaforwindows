@@ -1,0 +1,65 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Download ffmpeg
+        shell: pwsh
+        run: |
+          # GPL build from BtbN/FFmpeg-Builds. It ships as a separate program that Satsuma runs, not linked in.
+          $zip = "$env:RUNNER_TEMP\ffmpeg.zip"
+          Invoke-WebRequest "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-win64-gpl-7.1.zip" -OutFile $zip
+          Expand-Archive $zip "$env:RUNNER_TEMP\ffmpeg"
+          $bin = Get-ChildItem "$env:RUNNER_TEMP\ffmpeg" -Recurse -Filter ffmpeg.exe | Select-Object -First 1
+          New-Item -ItemType Directory tools -Force | Out-Null
+          Copy-Item $bin.FullName, (Join-Path $bin.DirectoryName ffprobe.exe) tools
+          Copy-Item (Get-ChildItem "$env:RUNNER_TEMP\ffmpeg" -Recurse -Filter LICENSE.txt | Select-Object -First 1).FullName tools\FFMPEG-LICENSE.txt
+          "SATSUMA_FFMPEG=$PWD\tools\ffmpeg.exe" >> $env:GITHUB_ENV
+
+      - name: Test core
+        run: dotnet test --project tests/Satsuma.Core.Tests -c Release
+
+      - name: Publish
+        shell: pwsh
+        run: |
+          dotnet publish src/Satsuma.App -c Release -r win-x64 --self-contained `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none -o publish
+          New-Item -ItemType Directory publish\tools -Force | Out-Null
+          Copy-Item tools\* publish\tools
+          Copy-Item README.md publish
+
+      - name: Self-test on Windows
+        shell: pwsh
+        run: |
+          # Make the published app find its bundled ffmpeg rather than the test one.
+          Remove-Item Env:SATSUMA_FFMPEG
+          $out = "$PWD\self-test"
+          $p = Start-Process publish\Satsuma.exe -ArgumentList "--self-test", "`"$out`"" -Wait -PassThru
+          Get-Content "$out\self-test.log"
+          exit $p.ExitCode
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Satsuma-win-x64
+          path: publish
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: self-test
+          path: self-test
