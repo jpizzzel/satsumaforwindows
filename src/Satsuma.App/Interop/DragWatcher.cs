@@ -5,9 +5,9 @@ using Satsuma.Core;
 namespace Satsuma.App.Interop;
 
 /// <summary>
-/// Watches the mouse system-wide with a low-level hook. Once the left button is held and the pointer has moved
-/// past the drag threshold, it reports whenever the held modifier (and so the wheel the user wants) changes.
-/// It never consumes input; the wheel window itself is the OLE drop target that receives the files.
+/// Watches the mouse system-wide with a low-level hook. Once the left button is down and the mouse has moved
+/// past the drag threshold, it tells us whenever the held modifier changes, which decides the wheel.
+/// It never swallows any input. The wheel window is the real drop target.
 /// </summary>
 sealed class DragWatcher : IDisposable
 {
@@ -41,7 +41,7 @@ sealed class DragWatcher : IDisposable
 
     IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
-        // Windows drops hooks that take longer than ~300 ms, so this only records state and posts events.
+        // Windows kills hooks that take more than ~300 ms, so just note what happened and post it.
         if (nCode >= 0 && !Paused)
         {
             var info = Marshal.PtrToStructure<Native.MSLLHOOKSTRUCT>(lParam);

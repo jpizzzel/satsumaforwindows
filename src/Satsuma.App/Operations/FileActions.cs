@@ -32,7 +32,7 @@ abstract class FileAction(string id, string label, string glyph, string descript
 }
 
 /// <summary>Copies the files themselves, ready to paste in Explorer, mail or chat apps.</summary>
-sealed class CopyFilesAction() : FileAction("copy", "Copy", "", "Copying")
+sealed class CopyFilesAction() : FileAction("copy", "Copy", "\uE8C8", "Copying")
 {
     protected override void Run(IReadOnlyList<string> inputs) => SetFiles(inputs, move: false);
 
@@ -42,31 +42,31 @@ sealed class CopyFilesAction() : FileAction("copy", "Copy", "", "Copying")
         files.AddRange([.. inputs]);
         var data = new DataObject();
         data.SetFileDropList(files);
-        // Explorer reads this to decide whether pasting copies or moves (DROPEFFECT_COPY = 1, DROPEFFECT_MOVE = 2).
+        // Explorer checks this to decide if pasting copies or moves (1 = copy, 2 = move).
         data.SetData("Preferred DropEffect", new MemoryStream(BitConverter.GetBytes(move ? 2 : 1)));
         Clipboard.SetDataObject(data, copy: true);
     }
 }
 
 /// <summary>Cuts the files: pasting them in Explorer moves them there.</summary>
-sealed class CutFilesAction() : FileAction("cut", "Move", "", "Ready to move")
+sealed class CutFilesAction() : FileAction("cut", "Move", "\uE8C6", "Ready to move")
 {
     protected override void Run(IReadOnlyList<string> inputs) => CopyFilesAction.SetFiles(inputs, move: true);
 }
 
-sealed class CopyPathAction() : FileAction("copy-path", "Copy path", "", "Copying path")
+sealed class CopyPathAction() : FileAction("copy-path", "Copy path", "\uE71B", "Copying path")
 {
     // Quoted, one per line, the same as Explorer's "Copy as path".
     protected override void Run(IReadOnlyList<string> inputs) =>
         Clipboard.SetText(string.Join(Environment.NewLine, inputs.Select(p => $"\"{p}\"")));
 }
 
-sealed class RevealAction() : FileAction("reveal", "Show", "", "Showing in File Explorer")
+sealed class RevealAction() : FileAction("reveal", "Show", "\uE838", "Showing in File Explorer")
 {
     protected override void Run(IReadOnlyList<string> inputs) => HudWindow.Reveal(inputs[0]);
 }
 
-sealed class TerminalAction() : FileAction("terminal", "Terminal", "", "Opening Terminal")
+sealed class TerminalAction() : FileAction("terminal", "Terminal", "\uE756", "Opening Terminal")
 {
     protected override void Run(IReadOnlyList<string> inputs)
     {
@@ -84,13 +84,13 @@ sealed class TerminalAction() : FileAction("terminal", "Terminal", "", "Openi
 }
 
 /// <summary>Parks the files in a small always-on-top shelf to drag out later.</summary>
-sealed class FloatAction() : FileAction("float", "Float", "", "Floating")
+sealed class FloatAction() : FileAction("float", "Float", "\uE718", "Floating")
 {
     protected override void Run(IReadOnlyList<string> inputs) => new FloatWindow(inputs).ShowNearCursor();
 }
 
 /// <summary>Opens the Windows share sheet (Nearby Sharing, Mail, Teams and so on).</summary>
-sealed class ShareAction(HudWindow hud) : FileAction("share", "Share", "", "Sharing")
+sealed class ShareAction(HudWindow hud) : FileAction("share", "Share", "\uE72D", "Sharing")
 {
     public override async Task<IReadOnlyList<string>> RunAsync(JobContext context)
     {

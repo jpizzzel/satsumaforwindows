@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Threading;
 using Satsuma.App.Interop;
 using Satsuma.App.Jobs;
@@ -93,8 +93,8 @@ public partial class App : Application
 
     async void OnReleased()
     {
-        // The drop reaches the wheel just after the button-up the hook sees, so give it a moment before
-        // tidying up a wheel nothing was dropped on. A newer drag re-arming in the meantime is left alone.
+        // The hook sees the button go up a moment before the drop reaches the wheel, so wait a bit before
+        // hiding it. If a new drag has already re-armed it, leave it alone.
         var armed = _armCount;
         await Task.Delay(400);
         if (_wheel is { IsArmed: true } && armed == _armCount)
@@ -124,7 +124,7 @@ public partial class App : Application
 
     static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        // A tray utility should survive one bad file rather than vanish; the log keeps the details.
+        // Better to log one bad file and keep going than to vanish from the tray.
         Log.Write($"Unhandled: {e.Exception}");
         e.Handled = true;
     }

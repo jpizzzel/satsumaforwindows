@@ -14,8 +14,8 @@ public static partial class Ffmpeg
     static readonly string ExeName = OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg";
 
     /// <summary>
-    /// Finds ffmpeg: the SATSUMA_FFMPEG variable, then tools\ffmpeg.exe beside the app (where the release
-    /// build bundles it), then the app folder itself, then PATH.
+    /// Looks for ffmpeg in this order: the SATSUMA_FFMPEG variable, tools\ffmpeg.exe next to the app (where
+    /// the release puts it), the app folder, then PATH.
     /// </summary>
     public static string? Locate()
     {
@@ -78,7 +78,7 @@ public static partial class Ffmpeg
         {
             while (await process.StandardOutput.ReadLineAsync() is { } line)
             {
-                // out_time_us is in microseconds; older builds call the same value out_time_ms.
+                // out_time_us is microseconds. Older builds call it out_time_ms, but it's microseconds there too.
                 if (progress is null || duration is not { } total || !line.StartsWith("out_time_", StringComparison.Ordinal))
                     continue;
                 var eq = line.IndexOf('=');

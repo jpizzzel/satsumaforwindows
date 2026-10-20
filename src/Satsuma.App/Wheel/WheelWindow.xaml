@@ -12,7 +12,7 @@
         AllowDrop="True"
         Focusable="False"
         UseLayoutRounding="True">
-    <!-- Only the painted wheel is hit-testable; the transparent corners let drags pass to the window below. -->
+    <!-- Only the painted wheel catches the mouse. The see-through corners let drags fall through to whatever is below. -->
     <Canvas x:Name="Surface" AllowDrop="True">
         <Canvas.Effect>
             <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.45" />

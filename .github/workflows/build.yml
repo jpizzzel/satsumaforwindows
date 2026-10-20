@@ -23,9 +23,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          # GPL build from BtbN/FFmpeg-Builds. It ships as a separate program that Satsuma runs, not linked in.
-          # Asset names follow the FFmpeg release (ffmpeg-n7.1-latest-win64-gpl-7.1.zip...), so pick the newest
-          # stable one rather than hard-coding a version that will eventually disappear.
+          # GPL build from BtbN/FFmpeg-Builds. Satsuma runs it as a separate program, it isn't linked in.
+          # The file names change with every FFmpeg release, so grab the newest stable one instead of hard-coding it.
           $release = Invoke-RestMethod "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest" `
             -Headers @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
           $asset = $release.assets |
@@ -58,11 +57,14 @@ jobs:
       - name: Self-test on Windows
         shell: pwsh
         run: |
-          # Make the published app find its bundled ffmpeg rather than the test one.
+          # Make the published app use its own bundled ffmpeg, not the one the tests used.
           Remove-Item Env:SATSUMA_FFMPEG
           $out = "$PWD\self-test"
-          $p = Start-Process publish\Satsuma.exe -ArgumentList "--self-test", "`"$out`"" -Wait -PassThru
+          $p = Start-Process publish\Satsuma.exe -ArgumentList "--self-test", "`"$out`"" -PassThru
+          $null = $p.Handle # without this PowerShell sometimes loses the exit code
+          $p.WaitForExit()
           Get-Content "$out\self-test.log"
+          Write-Host "Exit code: $($p.ExitCode)"
           exit $p.ExitCode
 
       - uses: actions/upload-artifact@v5

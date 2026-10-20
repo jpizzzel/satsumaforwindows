@@ -28,8 +28,8 @@ sealed class AppSettings
     public bool Welcomed { get; set; }
 
     /// <summary>
-    /// Shift converts, Ctrl opens tools, Alt opens actions: the Windows counterparts of Shift, Command and
-    /// Control on a Mac. When several are held the more specific wheel wins.
+    /// Shift = convert, Ctrl = tools, Alt = actions (roughly Shift, Cmd and Control on a Mac).
+    /// If more than one is down, the more specific wheel wins.
     /// </summary>
     public WheelMode? ModeFor(bool shift, bool control, bool alt) =>
         alt && ActionsEnabled ? WheelMode.Actions
@@ -68,7 +68,7 @@ sealed class AppSettings
         }
     }
 
-    /// <summary>Stored in the registry rather than the settings file, so it is always what Windows will do.</summary>
+    /// <summary>Lives in the registry instead of settings.json, so it always matches what Windows will actually do.</summary>
     public static bool LaunchAtStartup
     {
         get

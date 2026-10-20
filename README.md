@@ -1,128 +1,140 @@
 # Satsuma
 
-**Convert and act on files on Windows by holding a key while you drag them.**
+Drag a file, hold a key, drop it on what you want. That's the whole app.
 
-Start dragging a file (from File Explorer, the desktop, a browser download bar...), then hold a key. A wheel
-opens under the pointer. Drop the file on what you want and the result is saved next to the original. Drop on
-the middle of the wheel, or let go of the key, to cancel and carry on with a normal drag.
+I loved [Tangerine](https://tangerineformac.com/) on the Mac and wanted the same thing on Windows, so I built
+it. Start dragging something (from File Explorer, the desktop, wherever), hold a key, and a little wheel pops up
+under your cursor. Drop the file on a slice and the result shows up next to the original.
 
-| Hold   | Wheel   | What it offers |
-|--------|---------|----------------|
-| Shift  | Convert | Other formats for that kind of file |
-| Ctrl   | Tools   | Compress, resize, rotate, strip metadata, merge, split, normalize, zip, extract... |
-| Alt    | Actions | Copy, Move (cut), Copy path, Float, Share, Terminal, Show in Explorer |
+- **Shift** converts it to another format
+- **Ctrl** opens tools like compress, resize, merge and zip
+- **Alt** opens actions like copy, copy path and share
 
-Everything runs locally. Nothing is uploaded.
+Changed your mind? Drop it in the middle of the wheel, or just let go of the key and the drag goes back to normal.
 
-Satsuma is an independent, clean-room Windows take on the drag-and-hold idea popularized by
-[Tangerine for Mac](https://tangerineformac.com/) (by LEAP STUDIO). It is not affiliated with Tangerine and
-shares no code or assets with it; it was written from the publicly described behaviour.
+It all runs on your machine. Nothing gets uploaded anywhere.
 
-## What it can do
+Satsuma isn't affiliated with Tangerine or LEAP STUDIO. I rebuilt the idea from scratch based on how the Mac
+app is described. None of its code or artwork is in here.
 
-**Convert (Shift)**
+## What's on the wheels
 
-| From | To |
-|------|----|
-| Images: JPG, PNG, WEBP, HEIC, AVIF, GIF, BMP, TIFF, ICO, SVG, PSD, RAW... | JPG, PNG, WEBP, AVIF, GIF, BMP, TIFF, ICO, PDF (and HEIC where the bundled ImageMagick can encode it) |
-| Video: MP4, MOV, MKV, AVI, WEBM, WMV, FLV, M4V... | MP4, MOV, MKV, WEBM, AVI, GIF, or audio only: MP3, WAV, M4A, FLAC, OGG, OPUS, AIFF |
-| Audio: MP3, WAV, M4A, AAC, FLAC, OGG, OPUS, WMA, AIFF... | MP3, WAV, M4A, FLAC, OGG, OPUS, AIFF |
-| PDF | PNG or JPG (one image per page, rendered by Windows' own PDF engine) |
-| Subtitles: SRT, VTT, ASS | SRT, VTT, ASS |
+### Shift: convert
 
-Animated GIFs stay animated when converted to WEBP or TIFF. Transparent images get a white background when
-converted to JPG or BMP. Photos are rotated upright according to their EXIF orientation.
+Images (JPG, PNG, WEBP, HEIC, AVIF, GIF, BMP, TIFF, ICO, SVG, PSD, camera RAW) can become JPG, PNG, WEBP, AVIF,
+GIF, BMP, TIFF, ICO or PDF. HEIC output shows up too, if the bundled ImageMagick build can write it.
 
-**Tools (Ctrl)**
+Videos (MP4, MOV, MKV, AVI, WEBM, WMV and friends) can become MP4, MOV, MKV, WEBM, AVI or a GIF. You can also
+pull just the audio out as MP3, WAV, M4A, FLAC, OGG, OPUS or AIFF.
 
-- Images: Compress, 50%, 25%, Rotate, No metadata, Combine PDF (several images into one PDF)
-- Video: Compress (H.264, at most 1080p-ish quality), 720p, Mute, Rotate
-- Audio: Compress (MP3 96 kbps), Normalize (EBU R128 loudness), Trim silence
-- PDF: Merge (several PDFs, in the order dragged), Split pages, Rotate
-- Archives: Extract (ZIP, 7Z, RAR, TAR, GZ, TGZ, BZ2, XZ)
-- Anything, including folders: Zip
+Audio files convert between all of those same audio formats.
 
-**Actions (Alt)**
+PDFs turn into PNG or JPG images, one per page. This uses the PDF renderer that's already in Windows, so
+there's nothing extra to install.
 
-- **Copy** / **Move**: put the files on the clipboard; paste in Explorer to copy or move them there
-- **Copy path**: quoted full paths, like Explorer's "Copy as path"
-- **Float**: park the files in a small always-on-top shelf, then drag them out later
-- **Share**: the Windows share sheet (Nearby Sharing, Mail, Teams...)
-- **Terminal**: Windows Terminal (or PowerShell) in the file's folder
-- **Show**: select the file in File Explorer
+Subtitles go between SRT, VTT and ASS.
 
-When several files are dragged, a wheel only shows what applies to all of them. Results never overwrite
-anything: an existing `photo.png` makes the new one `photo (1).png`. Edits get a suffix, like
-`clip (compressed).mp4`.
+A few small things it handles for you: animated GIFs stay animated as WEBP, transparent images get a white
+background when they become JPGs, and photos get rotated the right way up before they're saved.
 
-Progress shows in the bottom-right corner. Click a finished card to show the result in File Explorer, or press
-its X to cancel a running job.
+### Ctrl: tools
 
-## Install
+| Files | Tools |
+|-------|-------|
+| Images | Compress, shrink to 50% or 25%, rotate, strip metadata, combine several into one PDF |
+| Video | Compress, shrink to 720p, mute, rotate |
+| Audio | Compress, normalize loudness, trim silence off the ends |
+| PDFs | Merge (in the order you dragged them), split into pages, rotate |
+| Archives | Extract ZIP, 7Z, RAR, TAR, GZ and the like |
+| Anything, folders too | Zip it |
 
-Requirements: Windows 10 (1809 or later) or Windows 11, x64.
+### Alt: actions
 
-1. Download `Satsuma-win-x64` from the latest successful run on the repository's **Actions** tab and unzip it
-   anywhere.
-2. Run `Satsuma.exe`. The welcome screen explains the keys; afterwards Satsuma lives in the system tray.
-3. Optional: tick "Start Satsuma when I sign in".
+Copy and Move put the files on your clipboard, so you can paste them into any Explorer window (Move cuts
+them). Copy path gives you the full quoted path, same as Explorer's "Copy as path". Float parks the files in a
+tiny window that stays on top until you drag them somewhere else, which is handy when you're juggling a bunch of
+windows. Share opens the Windows share sheet. Terminal opens Windows Terminal in that folder, and Show selects
+the file in Explorer.
 
-The download is self-contained (no .NET install needed) and includes `tools\ffmpeg.exe` for audio and video.
-Without it, image, PDF and archive features still work.
+If you drag several files at once, the wheel only shows what works for all of them. Nothing ever gets
+overwritten either: if `photo.png` already exists you'll get `photo (1).png`, and edited copies get a label
+like `clip (compressed).mp4`.
 
-Settings (tray icon, left click): turn each wheel on or off, save results to a fixed folder instead of next to
-the original, and pick the JPG/WEBP/AVIF quality. Settings and a log live in `%APPDATA%\Satsuma`.
+While something's working you'll see a progress card in the bottom-right corner. Click it when it's done to
+jump to the file, or hit the X to cancel.
 
-## Build from source
+## Getting it
 
-You need the .NET 10 SDK. The core library and its tests also build and run on Linux and macOS.
+You'll need Windows 10 (1809 or newer) or Windows 11 on an x64 PC.
+
+1. Open the **Actions** tab on this repo, click the latest green run, and download `Satsuma-win-x64`.
+2. Unzip it wherever you like and run `Satsuma.exe`.
+3. The welcome screen walks you through the keys. After that it lives in your system tray.
+
+You don't need to install .NET, it's bundled in. ffmpeg comes along too, in the `tools` folder, and handles
+all the audio and video. If you remove it, images, PDFs and archives still work.
+
+Click the tray icon for settings. You can turn each wheel on or off, send everything to one folder instead
+of next to the original, set the JPG/WEBP quality, and have Satsuma start when you sign in. Settings and a log
+file live in `%APPDATA%\Satsuma`.
+
+## Building it yourself
+
+Grab the .NET 10 SDK. The core library and its tests run fine on Linux and macOS too, which is nice for
+working on the conversion code.
 
 ```powershell
 dotnet test --project tests/Satsuma.Core.Tests
 dotnet publish src/Satsuma.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
 
-Put `ffmpeg.exe` in `publish\tools\` (the CI workflow downloads a build from
-[BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds)), or have it on `PATH`. The media tests use
-`SATSUMA_FFMPEG` or `PATH` to find it and are skipped when it is missing.
+Then drop `ffmpeg.exe` into `publish\tools\` (CI grabs one from
+[BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds)), or just have it on your PATH. The media tests
+look for it through `SATSUMA_FFMPEG` or PATH, and skip themselves if it's not there.
 
-`Satsuma.exe --self-test <folder>` checks the Windows-only parts on a real desktop: the mouse hook, the wheel and
-progress windows, PDF rendering, the tray icon and a few end-to-end conversions. It writes `self-test.log` and
-PNG previews of the wheels into the folder. CI runs it on every push.
+There's also `Satsuma.exe --self-test <folder>`. It pokes at all the Windows-only parts on a real desktop (the
+mouse hook, the wheel, PDF rendering, the tray icon) and runs a few real conversions. Then it writes a
+`self-test.log` and PNG snapshots of the wheels into that folder. CI runs it on every push.
 
 ## How it works
 
+Windows doesn't give you any way to change what Explorer does when you hold a key mid-drag. So Satsuma
+watches the mouse with a low-level hook. It only looks and never blocks anything. When it sees a drag going on
+with Shift, Ctrl or Alt held down, it slips an invisible drop target under your cursor. If the drag turns
+out to be files, that target draws itself as the wheel.
+
+When you drop, Satsuma tells the source app it was a copy. That matters because Shift normally means "move" in
+Explorer, and you really don't want your original file disappearing.
+
+The code is split in two:
+
 ```
-src/Satsuma.Core      platform-neutral: what's on each wheel and how to run it
-  FileKinds             file type by extension
-  OperationCatalog      every conversion/tool, filtered per wheel and per set of files
-  WheelLayout           segment geometry and hit testing (one ring, or two when crowded)
+src/Satsuma.Core     plain .NET: what goes on each wheel, and the conversions themselves
+  FileKinds            figures out file types from the extension
+  OperationCatalog     the list of everything, filtered per wheel and per set of files
+  WheelLayout          the slice math and hit testing (one ring, or two if it gets crowded)
   Images/ Media/ Documents/ Archives/   Magick.NET, ffmpeg, PDFsharp, SharpCompress
-src/Satsuma.App       the Windows app (WPF)
-  Interop/DragWatcher   low-level mouse hook: notices a drag plus a held modifier
-  Wheel/WheelWindow     transparent, non-activating, topmost OLE drop target drawn as the wheel
-  Operations/           actions, share sheet, Float shelf, PDF to image via Windows.Data.Pdf
-  Jobs/                 background runner and the progress cards
+src/Satsuma.App      the Windows app (WPF)
+  Interop/DragWatcher  the mouse hook
+  Wheel/WheelWindow    the wheel itself: a see-through, always-on-top drop target
+  Operations/          actions, share sheet, the Float shelf, PDF to image
+  Jobs/                runs things in the background and shows the progress cards
 tests/Satsuma.Core.Tests
 ```
 
-Windows has no API to change what Explorer does when a modifier is held mid-drag, so Satsuma watches the mouse
-with a low-level hook (it only observes, never blocks input). When a drag is under way and Shift, Ctrl or Alt is
-down, it places an invisible drop target under the pointer. If the drag carries files, that target turns into
-the wheel. Dropping returns "copy" to the source app, so Explorer never moves or deletes the original even though
-Shift normally means "move" there.
+## Things that don't work (yet)
 
-## Known limitations
+- You can't drag from an app running as administrator onto Satsuma. Windows blocks it.
+- No Word, Excel or PowerPoint conversions.
+- HEIC output depends on what's compiled into Magick.NET. If it can't write HEIC, the option just doesn't show
+  up.
+- Everything runs on the CPU, so big videos take a while.
 
-- Dragging from an app running as administrator onto Satsuma (not elevated) is blocked by Windows.
-- Office documents (DOCX, XLSX, PPTX) are not converted.
-- HEIC output depends on the codecs inside Magick.NET's native library; when it can't encode HEIC the option is
-  hidden.
-- Video and image conversion run on the CPU.
+## Licenses
 
-## Licences
+Satsuma uses Magick.NET (Apache-2.0), PDFsharp 6.2.4 (MIT) and SharpCompress (MIT). PDFsharp is pinned on
+purpose, since version 6.5 switched to the AGPL.
 
-Satsuma's dependencies: Magick.NET (Apache-2.0), PDFsharp 6.2.4 (MIT; deliberately pinned, as 6.5+ moved to
-AGPL), SharpCompress (MIT). The release bundles an unmodified GPL build of ffmpeg as a separate program in
-`tools\`, with its licence in `tools\FFMPEG-LICENSE.txt`; its source is available from the FFmpeg project and
-BtbN/FFmpeg-Builds.
+The download includes an unmodified GPL build of ffmpeg in `tools\`. Satsuma runs it as a separate program
+and doesn't link against it. Its license is in `tools\FFMPEG-LICENSE.txt`, and you can get the source from
+the FFmpeg project or BtbN/FFmpeg-Builds.

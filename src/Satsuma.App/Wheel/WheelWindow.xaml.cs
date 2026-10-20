@@ -12,9 +12,9 @@ using Path = System.Windows.Shapes.Path;
 namespace Satsuma.App.Wheel;
 
 /// <summary>
-/// The radial menu that appears under the cursor mid-drag. It starts as an invisible drop target; once the
-/// drag enters it with files, it fills with the operations for the current wheel and runs the one the files
-/// are dropped on. Dropping on the hub cancels.
+/// The wheel that pops up under the cursor mid-drag. It starts out as an invisible drop target. Once a drag
+/// with files moves over it, it draws the options for the current wheel and runs whatever you drop on.
+/// Dropping on the hub cancels.
 /// </summary>
 public partial class WheelWindow : Window
 {
@@ -115,7 +115,7 @@ public partial class WheelWindow : Window
         Native.SetWindowPos(hwnd, Native.HWND_TOPMOST, at.X - expected / 2, at.Y - expected / 2, 0, 0,
             Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
 
-        // Moving to a monitor with another DPI makes WPF resize the window, so centre on the size it chose.
+        // Moving to a monitor with a different DPI makes WPF resize the window, so re-center on whatever size it picked.
         Native.GetWindowRect(hwnd, out var rect);
         var (width, height) = (rect.Right - rect.Left, rect.Bottom - rect.Top);
         if (width != expected || height != expected)
@@ -134,7 +134,7 @@ public partial class WheelWindow : Window
             }
             else
             {
-                // Not files (text, a link...): get out of the way so the drop reaches its real target.
+                // Not files (text, a link, etc), so get out of the way and let it drop wherever it was headed.
                 Disarm();
                 e.Effects = DragDropEffects.None;
                 e.Handled = true;
@@ -192,7 +192,7 @@ public partial class WheelWindow : Window
         _segments.Clear();
         var accent = Modes[_mode].Accent;
 
-        // Fills the whole disc so a quick flick past the outer edge still counts as the outer ring.
+        // Covers the whole disc so flicking a little past the edge still hits the outer ring.
         Surface.Children.Add(Disc(Center, Catcher));
 
         foreach (var slot in _layout.Slots)

@@ -7,12 +7,12 @@ using Windows.Storage;
 namespace Satsuma.App.Operations;
 
 /// <summary>
-/// Renders PDF pages to images with the PDF engine built into Windows, so no Ghostscript is needed.
-/// A one-page PDF becomes "name.png"; longer ones get a folder with one image per page.
+/// Turns PDF pages into images with the PDF renderer built into Windows (no Ghostscript needed).
+/// One page gives you name.png. More than that gives you a folder with an image per page.
 /// </summary>
 sealed class PdfToImageOperation(string label, string extension) : PerFileOperation
 {
-    /// <summary>Renders at twice the page's size in points (144 DPI), sharp enough for screens and slides.</summary>
+    /// <summary>2x the page size in points, so 144 DPI. Sharp enough for screens and slides.</summary>
     const double Scale = 2;
 
     public override string Id => "pdf.convert." + extension;

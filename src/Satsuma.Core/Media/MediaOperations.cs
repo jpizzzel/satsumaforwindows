@@ -68,7 +68,7 @@ public static class MediaOperations
         Arguments = Split(arguments),
     };
 
-    // Filter graphs are passed as single arguments so their commas and quotes reach ffmpeg untouched.
+    // Filter graphs go in as a single argument so ffmpeg gets their commas and quotes as-is.
     static string[] Split(string arguments) => arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
     public static IEnumerable<FileOperation> Conversions() =>
@@ -101,39 +101,39 @@ public static class MediaOperations
 
     public static IEnumerable<FileOperation> Tools() =>
     [
-        Edit("video.compress", "Compress", "Compressing", "", Video, "compressed",
+        Edit("video.compress", "Compress", "Compressing", "\uE73F", Video, "compressed",
             "-c:v libx264 -preset slow -crf 28 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart", "mp4"),
         new FfmpegOperation
         {
             OperationId = "video.720p",
             Name = "720p",
             Verb = "Resizing to 720p",
-            Icon = "",
+            Icon = "\uE740",
             Accepts = Video,
             Suffix = "720p",
             Extension = "mp4",
             Arguments = ["-vf", "scale=-2:'min(720,ih)'", .. Split($"{H264} {Aac} -movflags +faststart")],
         },
-        Edit("video.mute", "Mute", "Removing audio", "", Video, "muted", "-map 0:v -c copy -an"),
+        Edit("video.mute", "Mute", "Removing audio", "\uE74F", Video, "muted", "-map 0:v -c copy -an"),
         new FfmpegOperation
         {
             OperationId = "video.rotate",
             Name = "Rotate",
             Verb = "Rotating",
-            Icon = "",
+            Icon = "\uE7AD",
             Accepts = Video,
             Suffix = "rotated",
             Extension = "mp4",
             Arguments = ["-vf", "transpose=clock", .. Split($"{H264} {Aac} -movflags +faststart")],
         },
-        Edit("audio.compress", "Compress", "Compressing", "", Audio, "compressed",
+        Edit("audio.compress", "Compress", "Compressing", "\uE73F", Audio, "compressed",
             "-vn -c:a libmp3lame -b:a 96k", "mp3"),
         new FfmpegOperation
         {
             OperationId = "audio.normalize",
             Name = "Normalize",
             Verb = "Normalizing loudness",
-            Icon = "",
+            Icon = "\uE767",
             Accepts = Audio,
             Suffix = "normalized",
             Arguments = ["-vn", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11"],
@@ -143,10 +143,10 @@ public static class MediaOperations
             OperationId = "audio.trim-silence",
             Name = "Trim silence",
             Verb = "Trimming silence",
-            Icon = "",
+            Icon = "\uE7A8",
             Accepts = Audio,
             Suffix = "trimmed",
-            // Strip leading silence, flip, strip again (the old tail), flip back.
+            // Trim the start, reverse, trim again (really the end), reverse back.
             Arguments = ["-vn", "-af", "silenceremove=start_periods=1:start_threshold=-50dB,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse"],
         },
     ];

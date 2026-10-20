@@ -101,7 +101,7 @@ public sealed class DocumentAndArchiveTests : IDisposable
         }
         catch (Exception)
         {
-            // Refusing the whole archive is fine too; what matters is that nothing lands outside.
+            // Throwing on the whole archive is fine too. All we care about is nothing ending up outside.
         }
 
         Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(_files.Root)!, "escaped.txt")));

@@ -6,7 +6,7 @@ public readonly record struct WheelSlot(int Index, int Ring, double StartAngle, 
     public double MidAngle => StartAngle + Sweep / 2;
     public double MidRadius => (InnerRadius + OuterRadius) / 2;
 
-    /// <summary>Point on the segment at <paramref name="radius"/> and <paramref name="angle"/>, relative to the wheel centre.</summary>
+    /// <summary>The x/y offset from the middle of the wheel for a radius and angle.</summary>
     public static (double X, double Y) PointAt(double radius, double angle)
     {
         var radians = angle * Math.PI / 180;
@@ -15,8 +15,8 @@ public readonly record struct WheelSlot(int Index, int Ring, double StartAngle, 
 }
 
 /// <summary>
-/// Lays out wheel segments around a central hub. Up to <see cref="SingleRingLimit"/> entries share one ring;
-/// more spill into a second, wider ring, split in proportion to each ring's circumference.
+/// Lays out the segments around the hub. Up to <see cref="SingleRingLimit"/> fit on one ring. Past that we add a
+/// second ring, and since it's bigger it gets more of the items.
 /// </summary>
 public sealed class WheelLayout
 {
@@ -55,14 +55,14 @@ public sealed class WheelLayout
     {
         var sweep = 360.0 / count;
         var inner = HubRadius + ring * RingWidth;
-        // The first segment is centred on twelve o'clock.
+        // First segment sits centered at 12 o'clock.
         for (var i = 0; i < count; i++)
             yield return new WheelSlot(firstIndex + i, ring, i * sweep - sweep / 2, sweep, inner, inner + RingWidth);
     }
 
     /// <summary>
-    /// The segment under a point relative to the centre, or null over the hub (which cancels). The outer ring
-    /// extends to infinity so a hurried flick past the edge still lands on the segment the user aimed for.
+    /// Which segment is under this point (measured from the middle)? Null over the hub, which means cancel.
+    /// The outer ring keeps going past its edge, so a sloppy flick still lands where you meant.
     /// </summary>
     public WheelSlot? HitTest(double x, double y)
     {

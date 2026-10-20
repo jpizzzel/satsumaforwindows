@@ -95,7 +95,7 @@ public sealed class ImageCompressOperation : ImageEditOperation
 {
     public override string Id => "image.compress";
     public override string Label => "Compress";
-    public override string Glyph => "";
+    public override string Glyph => "\uE73F";
     public override string Description => "Compressing";
     protected override string Suffix => "compressed";
 
@@ -122,7 +122,7 @@ public sealed class ImageResizeOperation(int percent) : ImageEditOperation
 {
     public override string Id => $"image.resize.{percent}";
     public override string Label => $"{percent}%";
-    public override string Glyph => "";
+    public override string Glyph => "\uE740";
     public override string Description => $"Resizing to {percent}%";
     protected override string Suffix => $"{percent}%";
 
@@ -137,7 +137,7 @@ public sealed class ImageRotateOperation : ImageEditOperation
 {
     public override string Id => "image.rotate";
     public override string Label => "Rotate";
-    public override string Glyph => "";
+    public override string Glyph => "\uE7AD";
     public override string Description => "Rotating";
     protected override string Suffix => "rotated";
 
@@ -152,7 +152,7 @@ public sealed class ImageStripMetadataOperation : ImageEditOperation
 {
     public override string Id => "image.strip";
     public override string Label => "No metadata";
-    public override string Glyph => "";
+    public override string Glyph => "\uE72E";
     public override string Description => "Removing metadata";
     protected override string Suffix => "no metadata";
 
@@ -169,7 +169,7 @@ public sealed class ImagesToPdfOperation : FileOperation
 {
     public override string Id => "image.combine-pdf";
     public override string Label => "Combine PDF";
-    public override string Glyph => "";
+    public override string Glyph => "\uEA90";
     public override string Description => "Combining into PDF";
 
     public override bool AppliesTo(IReadOnlyList<string> inputs) =>

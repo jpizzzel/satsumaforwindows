@@ -125,7 +125,7 @@ static partial class Native
         return info.rcWork;
     }
 
-    /// <summary>Keeps a window from taking focus or showing in Alt+Tab, so popping it up never disturbs the drag.</summary>
+    /// <summary>Stops a window from stealing focus or showing up in Alt+Tab, so popping it up doesn't mess with the drag.</summary>
     public static void MakeNonActivating(IntPtr hwnd)
     {
         var style = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();

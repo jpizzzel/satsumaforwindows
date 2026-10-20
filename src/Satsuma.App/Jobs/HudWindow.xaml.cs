@@ -28,7 +28,7 @@ public partial class HudWindow : Window
 
     public JobCard Start(string title, string detail, string? glyph)
     {
-        var card = new JobCard(this) { Title = title, Detail = detail, Glyph = glyph ?? "" };
+        var card = new JobCard(this) { Title = title, Detail = detail, Glyph = glyph ?? "\uE895" };
         _cards.Add(card);
         if (!IsVisible)
             Show();
@@ -108,12 +108,12 @@ public sealed class JobCard(HudWindow hud) : INotifyPropertyChanged
 
     public void Succeed(string title, string detail, IReadOnlyList<string> outputs)
     {
-        Finish(title, detail, "", Succeeded, TimeSpan.FromSeconds(5));
+        Finish(title, detail, "\uE73E", Succeeded, TimeSpan.FromSeconds(5));
         Outputs = outputs;
         Hint = outputs.Count > 0 ? "Click to show in File Explorer" : null;
     }
 
-    public void Fail(string title, string detail) => Finish(title, detail, "", Failed, TimeSpan.FromSeconds(12));
+    public void Fail(string title, string detail) => Finish(title, detail, "\uE783", Failed, TimeSpan.FromSeconds(12));
 
     public void Dismiss()
     {

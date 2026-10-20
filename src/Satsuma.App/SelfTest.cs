@@ -9,9 +9,9 @@ using Satsuma.Core.Media;
 namespace Satsuma.App;
 
 /// <summary>
-/// "Satsuma.exe --self-test &lt;folder&gt;" checks the Windows-only parts on a real desktop (CI runs it): the
-/// mouse hook, the wheel and HUD windows, PDF rendering, the tray icon, and a few end-to-end conversions.
-/// It writes self-test.log and wheel previews into the folder and exits non-zero if anything failed.
+/// Run "Satsuma.exe --self-test &lt;folder&gt;" to check the Windows-only bits on a real desktop (CI does this):
+/// the mouse hook, the wheel and progress windows, PDF rendering, the tray icon and a few real conversions.
+/// It writes self-test.log plus PNG previews of the wheels into the folder, and exits with 1 if anything broke.
 /// </summary>
 static class SelfTest
 {
@@ -123,11 +123,11 @@ static class SelfTest
             var visible = wheel.IsVisible;
             Native.GetWindowRect(new System.Windows.Interop.WindowInteropHelper(wheel).Handle, out var rect);
             wheel.Disarm();
-            var centredX = Math.Abs((rect.Left + rect.Right) / 2 - cursor.X) <= 1;
-            var centredY = Math.Abs((rect.Top + rect.Bottom) / 2 - cursor.Y) <= 1;
-            if (!visible || !centredX || !centredY)
+            var centeredX = Math.Abs((rect.Left + rect.Right) / 2 - cursor.X) <= 1;
+            var centeredY = Math.Abs((rect.Top + rect.Bottom) / 2 - cursor.Y) <= 1;
+            if (!visible || !centeredX || !centeredY)
                 throw new InvalidOperationException($"visible={visible} rect={rect.Left},{rect.Top},{rect.Right},{rect.Bottom} cursor={cursor.X},{cursor.Y}");
-            return Task.FromResult($"centred at {cursor.X},{cursor.Y}, {rect.Right - rect.Left}px wide");
+            return Task.FromResult($"centered at {cursor.X},{cursor.Y}, {rect.Right - rect.Left}px wide");
         });
         await Check("mouse hook", () =>
         {

@@ -10,7 +10,7 @@ public sealed class ZipOperation : FileOperation
 {
     public override string Id => "archive.zip";
     public override string Label => "Zip";
-    public override string Glyph => "";
+    public override string Glyph => "\uF012";
     public override string Description => "Zipping";
 
     public override bool AppliesTo(IReadOnlyList<string> inputs) => inputs.Count > 0;
@@ -49,7 +49,7 @@ public sealed class ExtractOperation : PerFileOperation
 {
     public override string Id => "archive.extract";
     public override string Label => "Extract";
-    public override string Glyph => "";
+    public override string Glyph => "\uE8B7";
     public override string Description => "Extracting";
 
     public override bool AppliesTo(IReadOnlyList<string> inputs) => FileKinds.All(inputs, FileKind.Archive);

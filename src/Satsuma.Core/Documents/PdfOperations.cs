@@ -7,7 +7,7 @@ public sealed class PdfMergeOperation : FileOperation
 {
     public override string Id => "pdf.merge";
     public override string Label => "Merge";
-    public override string Glyph => "";
+    public override string Glyph => "\uE8F1";
     public override string Description => "Merging PDFs";
 
     public override bool AppliesTo(IReadOnlyList<string> inputs) =>
@@ -37,7 +37,7 @@ public sealed class PdfSplitOperation : PerFileOperation
 {
     public override string Id => "pdf.split";
     public override string Label => "Split pages";
-    public override string Glyph => "";
+    public override string Glyph => "\uE8C6";
     public override string Description => "Splitting into pages";
 
     public override bool AppliesTo(IReadOnlyList<string> inputs) => FileKinds.All(inputs, FileKind.Pdf);
@@ -66,7 +66,7 @@ public sealed class PdfRotateOperation : PerFileOperation
 {
     public override string Id => "pdf.rotate";
     public override string Label => "Rotate";
-    public override string Glyph => "";
+    public override string Glyph => "\uE7AD";
     public override string Description => "Rotating pages";
 
     public override bool AppliesTo(IReadOnlyList<string> inputs) => FileKinds.All(inputs, FileKind.Pdf);

@@ -67,7 +67,7 @@ public partial class FloatWindow : Window
         var data = new DataObject(DataFormats.FileDrop, _items.Select(i => i.Path).ToArray());
         DragDrop.DoDragDrop(Items, data, DragDropEffects.Copy | DragDropEffects.Move | DragDropEffects.Link);
 
-        // Whatever was moved away is gone from the shelf; close once it is empty.
+        // Drop anything that got moved somewhere else, and close the shelf once it's empty.
         foreach (var item in _items.Where(i => !File.Exists(i.Path) && !Directory.Exists(i.Path)).ToList())
             _items.Remove(item);
         if (_items.Count == 0)

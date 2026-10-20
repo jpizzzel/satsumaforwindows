@@ -35,7 +35,7 @@ public sealed class WheelLayoutTests
     [InlineData(270, 3)]
     [InlineData(316, 0)]
     [InlineData(-30, 0)]
-    public void Four_segments_start_with_one_centred_at_the_top(double angle, int expected)
+    public void Four_segments_start_with_one_centered_at_the_top(double angle, int expected)
     {
         Assert.Equal(expected, Hit(WheelLayout.For(4), Inner, angle));
     }
@@ -72,12 +72,12 @@ public sealed class WheelLayoutTests
         Assert.Equal(Enumerable.Range(0, 12), layout.Slots.Select(s => s.Index));
         Assert.Equal(0, Hit(layout, Inner, 0));
         Assert.Equal(inner, Hit(layout, Outer, 0));
-        Assert.Equal(inner, Hit(layout, Outer, 350)); // still the top-centred segment
+        Assert.Equal(inner, Hit(layout, Outer, 350)); // still the segment centered at the top
         Assert.Equal(11, Hit(layout, Outer, 310));
     }
 
     [Fact]
-    public void Every_slot_hits_itself_at_its_centre()
+    public void Every_slot_hits_itself_at_its_center()
     {
         foreach (var count in Enumerable.Range(1, 20))
         {

@@ -50,7 +50,7 @@ public sealed class TestFiles : IDisposable
         return path;
     }
 
-    /// <summary>Builds a sample with ffmpeg's test sources, e.g. a tone or colour bars.</summary>
+    /// <summary>Makes a sample file from ffmpeg's built-in test sources, like a tone or color bars.</summary>
     public string Media(string name, params string[] arguments)
     {
         var ffmpeg = Ffmpeg.Locate()!;
