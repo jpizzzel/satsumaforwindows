@@ -69,10 +69,9 @@ jump to the file, or hit the X to cancel.
 You'll need Windows 10 (1809 or newer) or Windows 11 on an x64 PC. Windows 11 on ARM works too. It just runs
 Satsuma through its built-in x64 emulation.
 
-Downloads live on this repo's Releases page. Every tagged version has a zip there called something like
-`Satsuma-v0.1.0-win-x64.zip`. The repo is private, so you'll need access to it to see that page. If you don't
-have access, that's fine: I can download the zip and send it to you however's easiest (Google Drive, OneDrive,
-a USB stick, whatever works).
+Grab it from [satsumaforwindows.vercel.app](https://satsumaforwindows.vercel.app/) or this repo's
+[Releases page](https://github.com/jpizzzel/tangerineforwindows/releases/latest). Every version has a zip called
+something like `Satsuma-v0.1.0-win-x64.zip`.
 
 1. Download the zip.
 2. Right-click it, pick Properties, tick Unblock at the bottom of the General tab, and click OK. This tells
@@ -167,9 +166,15 @@ tests/Satsuma.Core.Tests
   up.
 - Everything runs on the CPU, so big videos take a while.
 
+## Contributing
+
+Satsuma is open source, and help is welcome. Bug reports, ideas and pull requests all go through GitHub; the
+[contributing guide](CONTRIBUTING.md) explains how to build it, run the tests and send a change. Please report
+security problems privately, as described in [SECURITY.md](SECURITY.md).
+
 ## Licenses
 
-Satsuma uses Magick.NET (Apache-2.0), PDFsharp 6.2.4 (MIT) and SharpCompress (MIT). PDFsharp is pinned on
+Satsuma itself is MIT licensed, see [LICENSE](LICENSE). It uses Magick.NET (Apache-2.0), PDFsharp 6.2.4 (MIT) and SharpCompress (MIT). PDFsharp is pinned on
 purpose, since version 6.5 switched to the AGPL. The full list of what's in the download, with licenses and
 copyright notices, is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). That file comes along in the zip
 too.

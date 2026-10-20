@@ -1,0 +1,16 @@
+name: Idea
+description: A format, tool or action you'd like on the wheel.
+labels: [idea]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like it to do?
+      description: What you'd drag, which wheel it belongs on, and what should come out.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does it matter to you?
+      description: The situation where you'd use it. It helps decide what goes first.

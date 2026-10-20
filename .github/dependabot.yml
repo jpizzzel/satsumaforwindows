@@ -1,0 +1,22 @@
+# Checks once a week for newer versions of the libraries and GitHub actions we use, and opens a
+# pull request when there's an update. Nothing merges by itself: each one still needs a review.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      nuget:
+        patterns: ["*"]
+    ignore:
+      # PDFsharp 6.5+ is AGPL with a license check. Stay on the MIT 6.2 line.
+      - dependency-name: PDFsharp
+        versions: [">= 6.5.0"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

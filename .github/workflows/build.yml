@@ -6,8 +6,8 @@ on:
     tags: ['v*']
     # The website deploys on Vercel by itself, so changes to it don't need a Windows build.
     paths-ignore: ['site/**']
+  # Pull requests always build, even website-only ones, so the required "windows" check always reports back.
   pull_request:
-    paths-ignore: ['site/**']
   # The Run workflow button on the Actions tab. Fill in a version like v0.2.0 to publish a release from it.
   workflow_dispatch:
     inputs:

@@ -1,0 +1,29 @@
+name: Something's broken
+description: A conversion failed, the wheel misbehaved, or the app crashed.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you dragged, which key you held, what you picked, and what you expected instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Satsuma version
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: The end of %APPDATA%\Satsuma\log.txt (right-click the tray icon, then "Open log folder"). Check it doesn't include anything private first.
+      render: text
