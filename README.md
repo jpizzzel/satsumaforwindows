@@ -120,14 +120,16 @@ mouse hook, the wheel, PDF rendering, the tray icon) and runs a few real convers
 
 ## Making a release
 
-This part is for me. There's nothing to bump by hand. The version comes from the tag:
+This part is for me. There's nothing to bump by hand, the version comes from the tag. The easy way is the
+button: open the Actions tab, pick Build, click Run workflow, type a version like `v0.2.0` and hit the green
+button. That works from a phone too. Or from a terminal:
 
 ```
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
-CI builds it, runs the tests and the self-test, and then publishes a Release for that tag with the zip
+Either way, CI builds it, runs the tests and the self-test, and then publishes a Release for that tag with the zip
 attached. If the release job fails partway, it's safe to just re-run it. It'll replace the zip on the existing
 release instead of making a second one.
 

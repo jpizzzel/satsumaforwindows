@@ -5,7 +5,13 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  # The Run workflow button on the Actions tab. Fill in a version like v0.2.0 to publish a release from it.
   workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, like v0.2.0. Leave empty for a plain build.
+        required: false
+        default: ''
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -13,6 +19,10 @@ concurrency:
 
 permissions:
   contents: read
+
+env:
+  # The release tag: either the pushed tag, or the version typed into the Run workflow button.
+  RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
 
 jobs:
   windows:
@@ -66,7 +76,7 @@ jobs:
       - name: Publish
         shell: pwsh
         run: |
-          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '0.0.0-dev' }
+          $version = if ($env:RELEASE_TAG) { $env:RELEASE_TAG.TrimStart('v') } else { '0.0.0-dev' }
           Write-Host "Version $version"
           dotnet publish src/Satsuma.App -c Release -r win-x64 --self-contained `
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none `
@@ -140,7 +150,7 @@ jobs:
 
   # Push a tag like v0.1.0 and this turns the build into a GitHub Release with a zip people can download.
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || startsWith(inputs.version, 'v')
     needs: windows
     runs-on: ubuntu-latest
     permissions:
@@ -155,18 +165,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          zip_name="Satsuma-${GITHUB_REF_NAME}-win-x64.zip"
+          zip_name="Satsuma-${RELEASE_TAG}-win-x64.zip"
           rm -f "$zip_name"
           (cd Satsuma && zip -qr "../$zip_name" .)
           # Re-running this job is safe: if the release already exists, just replace the zip.
-          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "$zip_name" --repo "$GITHUB_REPOSITORY" --clobber
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$zip_name" --repo "$GITHUB_REPOSITORY" --clobber
           else
             ffmpeg_build="$(sed -n 's/^Build: //p' Satsuma/tools/FFMPEG-VERSION.txt)"
             printf '%s\n' \
               "The zip includes an unmodified GPL build of FFmpeg ($ffmpeg_build) in the tools folder." \
               "You can get its source from the FFmpeg project (https://ffmpeg.org) and BtbN/FFmpeg-Builds (https://github.com/BtbN/FFmpeg-Builds). FFMPEG-VERSION.txt in the tools folder names the exact build." \
               > notes.md
-            gh release create "$GITHUB_REF_NAME" "$zip_name" --repo "$GITHUB_REPOSITORY" \
-              --title "Satsuma $GITHUB_REF_NAME" --notes-file notes.md --generate-notes
+            gh release create "$RELEASE_TAG" "$zip_name" --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" --title "Satsuma $RELEASE_TAG" --notes-file notes.md --generate-notes
           fi
