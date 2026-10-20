@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="15.0.0" />
+    <!-- PDFsharp 6.5+ is AGPL with a runtime license check; 6.2.x is the last MIT release. -->
+    <PackageReference Include="PDFsharp" Version="[6.2.4]" />
+    <PackageReference Include="SharpCompress" Version="0.50.6" />
+    <!-- PDFsharp 6.2.4 depends on a vulnerable 8.0.1. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
+
+</Project>
