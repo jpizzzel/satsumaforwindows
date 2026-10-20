@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Satsuma for Windows</title>
+  <meta name="description" content="Drag a file, hold Shift, drop it on a format. Satsuma is a file converter that lives under your cursor on Windows.">
+  <meta name="theme-color" content="#eae2d2">
+  <meta property="og:title" content="Satsuma for Windows">
+  <meta property="og:description" content="Drag a file, hold Shift, drop it on a format. A file converter that lives under your cursor.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Architects+Daughter&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="corner corner-left" aria-hidden="true">
+    <span>X <b id="coord-x">278.52</b></span>
+    <span>Y <b id="coord-y">566.44</b></span>
+  </div>
+  <div class="corner corner-right hand" id="corner-version">for windows 10 &amp; 11</div>
+
+  <header class="nav-wrap">
+    <nav class="nav" aria-label="Main">
+      <a class="brand" href="#top" aria-label="Satsuma home">
+        <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+          <rect x="1" y="1" width="38" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="20" cy="21" r="12" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M20 21 L20 9 A12 12 0 0 1 30.4 15 Z" fill="#ef6a1f"/>
+          <path d="M20 9v24M8 21h24M11.5 12.5l17 17M28.5 12.5l-17 17" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+        <span>satsuma</span>
+      </a>
+      <div class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#formats">Formats</a>
+        <a href="#faq">FAQs</a>
+      </div>
+      <a class="nav-cta" href="/download" data-download>
+        <span class="cta-square" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 3v7m0 0L5 7m3 3 3-3M3.5 13h9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg></span>
+        <span>Download</span>
+      </a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="headline">
+        <h1>Convert files<br>without letting go</h1>
+        <p class="note note-left hand" aria-hidden="true"><span class="underlined">drag &amp; drop</span></p>
+        <p class="note note-right hand" aria-hidden="true">
+          <svg viewBox="0 0 40 16" class="arrow"><path d="M2 9c9-6 20-7 33-2m0 0-5-4m5 4-6 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          <span>just hold <span class="underlined">shift</span></span>
+        </p>
+      </div>
+
+      <div class="scene" id="scene">
+        <div class="beams" aria-hidden="true"></div>
+        <div class="grain" aria-hidden="true"></div>
+
+        <svg class="drawing" viewBox="-10 0 420 400" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M200 18V362M18 190H382" stroke-dasharray="3 5" opacity=".55"/>
+          <circle cx="200" cy="190" r="150" opacity=".5" stroke-dasharray="2 6"/>
+          <circle cx="200" cy="190" r="140" stroke-width="2"/>
+          <circle cx="200" cy="190" r="128"/>
+          <path d="M206.7 70.2 A120 120 0 0 1 280.0 100.5 L214.7 173.6 A22 22 0 0 0 201.2 168.0 Z"/>
+          <path d="M289.5 110.0 A120 120 0 0 1 319.8 183.3 L222.0 188.8 A22 22 0 0 0 216.4 175.3 Z" fill="#ef6a1f" stroke="#ef6a1f"/>
+          <path d="M319.8 196.7 A120 120 0 0 1 289.5 270.0 L216.4 204.7 A22 22 0 0 0 222.0 191.2 Z"/>
+          <path d="M280.0 279.5 A120 120 0 0 1 206.7 309.8 L201.2 212.0 A22 22 0 0 0 214.7 206.4 Z"/>
+          <path d="M193.3 309.8 A120 120 0 0 1 120.0 279.5 L185.3 206.4 A22 22 0 0 0 198.8 212.0 Z"/>
+          <path d="M110.5 270.0 A120 120 0 0 1 80.2 196.7 L178.0 191.2 A22 22 0 0 0 183.6 204.7 Z"/>
+          <path d="M80.2 183.3 A120 120 0 0 1 110.5 110.0 L183.6 175.3 A22 22 0 0 0 178.0 188.8 Z"/>
+          <path d="M120.0 100.5 A120 120 0 0 1 193.3 70.2 L198.8 168.0 A22 22 0 0 0 185.3 173.6 Z"/>
+          <circle cx="200" cy="190" r="14"/>
+          <path d="M200.0 54.0L200.0 40.0" opacity=".7"/>
+          <path d="M236.2 54.8L238.8 45.1" opacity=".7"/>
+          <path d="M270.0 68.8L275.0 60.1" opacity=".7"/>
+          <path d="M296.2 93.8L306.1 83.9" opacity=".7"/>
+          <path d="M321.2 120.0L329.9 115.0" opacity=".7"/>
+          <path d="M335.2 153.8L344.9 151.2" opacity=".7"/>
+          <path d="M336.0 190.0L350.0 190.0" opacity=".7"/>
+          <path d="M335.2 226.2L344.9 228.8" opacity=".7"/>
+          <path d="M321.2 260.0L329.9 265.0" opacity=".7"/>
+          <path d="M296.2 286.2L306.1 296.1" opacity=".7"/>
+          <path d="M270.0 311.2L275.0 319.9" opacity=".7"/>
+          <path d="M236.2 325.2L238.8 334.9" opacity=".7"/>
+          <path d="M200.0 326.0L200.0 340.0" opacity=".7"/>
+          <path d="M163.8 325.2L161.2 334.9" opacity=".7"/>
+          <path d="M130.0 311.2L125.0 319.9" opacity=".7"/>
+          <path d="M103.8 286.2L93.9 296.1" opacity=".7"/>
+          <path d="M78.8 260.0L70.1 265.0" opacity=".7"/>
+          <path d="M64.8 226.2L55.1 228.8" opacity=".7"/>
+          <path d="M64.0 190.0L50.0 190.0" opacity=".7"/>
+          <path d="M64.8 153.8L55.1 151.2" opacity=".7"/>
+          <path d="M78.8 120.0L70.1 115.0" opacity=".7"/>
+          <path d="M103.8 93.8L93.9 83.9" opacity=".7"/>
+          <path d="M130.0 68.8L125.0 60.1" opacity=".7"/>
+          <path d="M163.8 54.8L161.2 45.1" opacity=".7"/>
+          <path d="M60 200V380M340 200V380" stroke-dasharray="2 4" opacity=".55"/>
+          <path d="M60 372H340M60 372l9 -4m-9 4 9 4M340 372l-9 -4m9 4 -9 4"/>
+          <path d="M273.9 159.4L300 52H404"/><circle cx="273.9" cy="159.4" r="2.5" fill="currentColor"/>
+          <path d="M85.3 270.3L22 318H4"/><circle cx="85.3" cy="270.3" r="2.5" fill="currentColor"/>
+          <path d="M89.1 126.0L34 48H4"/><circle cx="89.1" cy="126.0" r="2.5" fill="currentColor"/>
+    <g class="drawing-text">
+      <text x="404" y="44" text-anchor="end">segment 1 of 8</text>
+      <text x="4" y="40">pith</text>
+      <text x="4" y="310">peel</text>
+      <text x="200" y="364" text-anchor="middle">&#xD8; 64 mm</text>
+      <text x="382" y="182" text-anchor="end">0&#xB0;</text>
+    </g>
+        </svg>
+
+        <div class="window" id="explorer" aria-label="Downloads folder">
+          <div class="titlebar">
+            <span class="title"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4h5l1.5 1.5h6.5v8h-13z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Downloads</span>
+            <span class="controls" aria-hidden="true"><i>&#x2013;</i><i>&#x25A1;</i><i>&#x2715;</i></span>
+          </div>
+          <div class="address"><span>This PC</span><span aria-hidden="true">&#x203A;</span><span>Downloads</span><span class="count" id="item-count">3 items</span></div>
+          <ul class="files" id="files" aria-label="Files"></ul>
+        </div>
+
+        <div class="keybar" role="group" aria-label="Hold a key">
+          <span class="hand keybar-label" aria-hidden="true">hold a key &#x2192;</span>
+          <button class="kcap" type="button" data-mode="convert" aria-pressed="false">Shift</button>
+          <button class="kcap" type="button" data-mode="tools" aria-pressed="false">Ctrl</button>
+          <button class="kcap" type="button" data-mode="actions" aria-pressed="false">Alt</button>
+        </div>
+
+        <div class="float-shelf" id="float-shelf" hidden>
+          <div class="shelf-head"><span>Float</span><button type="button" id="shelf-close" aria-label="Close the float shelf">&#x2715;</button></div>
+          <ul id="shelf-items"></ul>
+        </div>
+
+        <svg class="wheel" id="wheel" viewBox="0 0 404 404" hidden aria-label="Satsuma wheel"></svg>
+        <div class="ghost" id="ghost" hidden></div>
+
+        <div class="hud" id="hud" data-state="idle" role="status" aria-live="polite">
+          <span class="hud-icon" id="hud-icon"></span>
+          <span class="hud-text"><b id="hud-title"></b><span id="hud-detail"></span></span>
+          <span class="hud-bar"><span id="hud-progress"></span></span>
+        </div>
+
+        <p class="caption">
+          <span>Drag a file, hold Shift, let go on a slice.</span>
+          <span class="cta-square" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span>
+        </p>
+
+        <div class="taskbar" aria-hidden="true">
+          <div class="task-icons"><i class="start"></i><i></i><i class="active"></i><i></i></div>
+          <div class="tray"><svg viewBox="0 0 40 40"><circle cx="20" cy="21" r="12" fill="#ef6a1f"/><path d="M20 9v24M8 21h24M11.5 12.5l17 17M28.5 12.5l-17 17" stroke="#f3ecdf" stroke-width="1.6"/></svg><span id="clock">10:24</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="how">
+      <div class="band-inner">
+        <div class="section-head">
+          <p class="label">01 / How it works</p>
+          <h2>Three keys you already know</h2>
+          <p class="sub">Windows already uses Shift, Ctrl and Alt while you drag. Satsuma listens for them, opens a wheel right under the pointer, and gets out of the way the moment you let go of the key.</p>
+        </div>
+        <div class="keys-grid">
+          <article class="key-card">
+            <div class="bigkey"><span>Shift</span></div>
+            <h3>Convert</h3>
+            <p>Every format that makes sense for what you're holding. HEIC to JPG, MOV to MP4, a clip to a GIF, a PDF to images.</p>
+            <p class="hand margin-note">the one you'll use daily</p>
+          </article>
+          <article class="key-card">
+            <div class="bigkey"><span>Ctrl</span></div>
+            <h3>Tools</h3>
+            <p>Quick edits that save a copy. Compress a video for chat, merge PDFs, shrink a photo, strip its location data, zip a folder.</p>
+            <p class="hand margin-note">originals never change</p>
+          </article>
+          <article class="key-card">
+            <div class="bigkey"><span>Alt</span></div>
+            <h3>Actions</h3>
+            <p>The right-click stuff without letting go: copy, move, copy the path, share, open a terminal there, or park it in Float.</p>
+            <p class="hand margin-note">float is underrated</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band blueprint" id="formats">
+      <div class="band-inner">
+        <div class="section-head">
+          <p class="label">02 / Formats</p>
+          <h2>Reads almost anything on your drive</h2>
+          <p class="sub">Drag a few files at once and the wheel only shows what works for all of them.</p>
+        </div>
+        <div class="spec">
+          <table>
+            <thead><tr><th scope="col">Kind</th><th scope="col">Opens</th><th scope="col">Saves as</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Images</th><td>JPG PNG WEBP HEIC AVIF GIF BMP TIFF ICO SVG PSD TGA JXL, raw DNG CR2 NEF ARW</td><td>JPG PNG WEBP AVIF GIF BMP TIFF ICO PDF</td></tr>
+              <tr><th scope="row">Video</th><td>MP4 MOV MKV AVI WEBM M4V WMV FLV MPG 3GP TS</td><td>MP4 MOV MKV WEBM AVI GIF, or just the audio</td></tr>
+              <tr><th scope="row">Audio</th><td>MP3 WAV M4A AAC FLAC OGG OPUS WMA AIFF AMR</td><td>MP3 WAV M4A FLAC OGG OPUS AIFF</td></tr>
+              <tr><th scope="row">PDF</th><td>PDF</td><td>PNG or JPG, one per page</td></tr>
+              <tr><th scope="row">Subtitles</th><td>SRT VTT ASS SSA</td><td>SRT VTT ASS</td></tr>
+              <tr><th scope="row">Archives</th><td>ZIP 7Z RAR TAR GZ TGZ BZ2 XZ</td><td>Unpacked into a folder</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="details">
+      <div class="band-inner details">
+        <div class="detail"><p class="label">Safe</p><h3>Your original stays put</h3><p>Shift normally means "move" in Explorer. Satsuma always copies, so the file you dragged never goes anywhere.</p></div>
+        <div class="detail"><p class="label">Tidy</p><h3>Nothing gets overwritten</h3><p>If <code>beach.png</code> exists you get <code>beach (1).png</code>. Edits get a label, like <code>trip (compressed).mp4</code>.</p></div>
+        <div class="detail"><p class="label">Private</p><h3>Works offline</h3><p>Every conversion runs on your PC. No uploads, no account, no waiting on someone's server.</p></div>
+        <div class="detail"><p class="label">Careful</p><h3>Sweats the small stuff</h3><p>Animated GIFs stay animated, phone photos come out the right way up, and odd-sized screen recordings still convert.</p></div>
+      </div>
+    </section>
+
+    <section class="band download" id="download">
+      <div class="band-inner download-grid">
+        <div class="download-card">
+          <p class="label">03 / Download</p>
+          <h2>Get Satsuma</h2>
+          <p class="sub">One zip. Nothing to install, and .NET and ffmpeg come bundled.</p>
+          <a class="big-cta" href="/download" data-download>
+            <span class="cta-square" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 3v7m0 0L5 7m3 3 3-3M3.5 13h9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg></span>
+            <span id="download-label">Download for Windows</span>
+          </a>
+          <dl class="facts">
+            <div><dt>Version</dt><dd id="fact-version">Latest</dd></div>
+            <div><dt>Size</dt><dd id="fact-size">About 180 MB</dd></div>
+            <div><dt>Needs</dt><dd>Windows 10 1809+ or 11</dd></div>
+          </dl>
+          <p class="soon" id="download-soon" hidden>The first release is still on its way. Check back soon.</p>
+        </div>
+        <ol class="steps">
+          <li><b>Unblock the zip.</b> Right-click it, choose Properties, tick Unblock, then OK.</li>
+          <li><b>Extract it somewhere you'll keep it.</b> Your Documents folder is fine. Don't run it from inside the zip.</li>
+          <li><b>Open Satsuma.exe.</b> If you see "Windows protected your PC", click More info, then Run anyway. That shows up because the app isn't code-signed yet.</li>
+          <li><b>Start dragging.</b> It lives in your system tray. Grab a file, hold Shift, let go on a slice.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="band" id="faq">
+      <div class="band-inner faq">
+        <div class="section-head">
+          <p class="label">04 / FAQs</p>
+          <h2>Questions people ask</h2>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>Why does Windows warn me when I open it?</summary>
+            <p>SmartScreen warns about any app that isn't code-signed yet and that it hasn't seen many times. Click More info, then Run anyway. Unblocking the zip before you extract it skips some of these warnings.</p>
+          </details>
+          <details>
+            <summary>Does it watch everything I do?</summary>
+            <p>It watches the mouse for one thing: a drag with Shift, Ctrl or Alt held. It never blocks or records input, and it never sends anything anywhere. Some antivirus tools get nervous about apps that watch the mouse at all, which is why a few of them flag it.</p>
+          </details>
+          <details>
+            <summary>Do I need to be online?</summary>
+            <p>No. Every conversion happens on your PC, including video and audio, through a copy of ffmpeg that comes in the zip.</p>
+          </details>
+          <details>
+            <summary>Where do converted files go?</summary>
+            <p>Right next to the original, by default. You can pick one folder for everything in settings instead. Click the tray icon to open them.</p>
+          </details>
+          <details>
+            <summary>Is this Tangerine for Mac?</summary>
+            <p>No. Satsuma is an independent Windows app inspired by the same drag-and-hold idea. It isn't affiliated with Tangerine or LEAP STUDIO.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="band-inner footer-inner">
+      <span class="brand"><svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="20" cy="21" r="12" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 21 L20 9 A12 12 0 0 1 30.4 15 Z" fill="#ef6a1f"/><path d="M20 9v24M8 21h24M11.5 12.5l17 17M28.5 12.5l-17 17" stroke="currentColor" stroke-width="1.3"/></svg><span>satsuma</span></span>
+      <p>Built with Magick.NET, FFmpeg, PDFsharp and SharpCompress.</p>
+      <p class="hand">made for windows, with love for the mac original</p>
+    </div>
+  </footer>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
