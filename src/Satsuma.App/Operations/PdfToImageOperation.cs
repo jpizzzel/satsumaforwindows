@@ -54,7 +54,8 @@ sealed class PdfToImageOperation(string label, string extension) : PerFileOperat
                 BitmapEncoderId = encoder,
             };
             await using (var stream = File.Create(pathFor(i)))
-                await page.RenderToStreamAsync(stream.AsRandomAccessStream(), options);
+            using (var output = stream.AsRandomAccessStream())
+                await page.RenderToStreamAsync(output, options);
             progress?.Report((i + 1.0) / document.PageCount);
         }
         return result;

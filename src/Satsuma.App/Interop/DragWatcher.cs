@@ -14,12 +14,15 @@ sealed class DragWatcher : IDisposable
     readonly Dispatcher _dispatcher;
     readonly Func<WheelMode?> _currentMode;
     readonly Native.LowLevelMouseProc _proc; // Held in a field so the GC can't collect the hook callback.
+    readonly Thread _thread;
     IntPtr _hook;
+    uint _threadId;
 
     bool _buttonDown;
     bool _dragging;
     Native.POINT _downAt;
     WheelMode? _reported;
+    volatile bool _paused;
 
     /// <summary>The modifier changed during a drag. Null means no (enabled) modifier is held.</summary>
     public event Action<WheelMode?, Native.POINT>? ModeChanged;
@@ -27,22 +30,49 @@ sealed class DragWatcher : IDisposable
     /// <summary>The left button was released, ending any drag.</summary>
     public event Action? Released;
 
-    public bool Paused { get; set; }
+    public bool Paused
+    {
+        get => _paused;
+        set
+        {
+            _paused = value;
+            // Forget any half-seen drag so we don't wake up thinking the button is still down.
+            _dispatcher.BeginInvoke(() => Released?.Invoke());
+        }
+    }
 
     public DragWatcher(Dispatcher dispatcher, Func<WheelMode?> currentMode)
     {
         _dispatcher = dispatcher;
         _currentMode = currentMode;
         _proc = HookCallback;
-        _hook = Native.SetWindowsHookEx(Native.WH_MOUSE_LL, _proc, Native.GetModuleHandle(null), 0);
-        if (_hook == IntPtr.Zero)
-            throw new InvalidOperationException($"Could not install the mouse hook (error {Marshal.GetLastPInvokeError()}).");
+
+        // The hook gets its own thread and message loop. If it lived on the UI thread, any hiccup there
+        // longer than ~300 ms would make Windows quietly unhook us, and the whole app would just stop working.
+        var installed = new TaskCompletionSource<int>();
+        _thread = new Thread(() =>
+        {
+            _threadId = Native.GetCurrentThreadId();
+            _hook = Native.SetWindowsHookEx(Native.WH_MOUSE_LL, _proc, Native.GetModuleHandle(null), 0);
+            installed.SetResult(_hook == IntPtr.Zero ? Marshal.GetLastPInvokeError() : 0);
+            if (_hook == IntPtr.Zero)
+                return;
+            while (Native.GetMessage(out var message, IntPtr.Zero, 0, 0) > 0)
+                Native.DispatchMessage(ref message);
+            Native.UnhookWindowsHookEx(_hook);
+        })
+        { IsBackground = true, Name = "Satsuma mouse hook" };
+        _thread.Start();
+
+        var error = installed.Task.GetAwaiter().GetResult();
+        if (error != 0)
+            throw new InvalidOperationException($"Could not install the mouse hook (error {error}).");
     }
 
     IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
         // Windows kills hooks that take more than ~300 ms, so just note what happened and post it.
-        if (nCode >= 0 && !Paused)
+        if (nCode >= 0 && !_paused)
         {
             var info = Marshal.PtrToStructure<Native.MSLLHOOKSTRUCT>(lParam);
             switch ((int)wParam)
@@ -52,6 +82,11 @@ sealed class DragWatcher : IDisposable
                     _dragging = false;
                     _reported = null;
                     _downAt = info.pt;
+                    break;
+
+                case Native.WM_MOUSEMOVE when _buttonDown && !Native.IsKeyDown(Native.VK_LBUTTON):
+                    // We missed the button-up (a UAC prompt, Ctrl+Alt+Del, an admin window...). Treat it as one.
+                    EndDrag();
                     break;
 
                 case Native.WM_MOUSEMOVE when _buttonDown:
@@ -73,24 +108,29 @@ sealed class DragWatcher : IDisposable
                     break;
 
                 case Native.WM_LBUTTONUP when _buttonDown:
-                    _buttonDown = false;
-                    var wasDragging = _dragging;
-                    _dragging = false;
-                    _reported = null;
-                    if (wasDragging)
-                        _dispatcher.BeginInvoke(() => Released?.Invoke());
+                    EndDrag();
                     break;
             }
         }
         return Native.CallNextHookEx(_hook, nCode, wParam, lParam);
     }
 
+    void EndDrag()
+    {
+        _buttonDown = false;
+        var wasDragging = _dragging;
+        _dragging = false;
+        _reported = null;
+        if (wasDragging)
+            _dispatcher.BeginInvoke(() => Released?.Invoke());
+    }
+
     public void Dispose()
     {
-        if (_hook != IntPtr.Zero)
+        if (_threadId != 0 && _thread.IsAlive)
         {
-            Native.UnhookWindowsHookEx(_hook);
-            _hook = IntPtr.Zero;
+            Native.PostThreadMessage(_threadId, Native.WM_QUIT, IntPtr.Zero, IntPtr.Zero);
+            _thread.Join(TimeSpan.FromSeconds(1));
         }
     }
 }

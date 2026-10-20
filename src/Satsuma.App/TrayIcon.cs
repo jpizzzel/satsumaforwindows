@@ -49,6 +49,8 @@ sealed class TrayIcon : IDisposable
     public void Dispose()
     {
         _icon.Visible = false;
+        _icon.ContextMenuStrip?.Dispose();
+        _icon.Icon?.Dispose();
         _icon.Dispose();
     }
 }

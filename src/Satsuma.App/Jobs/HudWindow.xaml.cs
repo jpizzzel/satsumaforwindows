@@ -15,6 +15,7 @@ namespace Satsuma.App.Jobs;
 public partial class HudWindow : Window
 {
     readonly ObservableCollection<JobCard> _cards = [];
+    Native.POINT _anchor;
 
     public HudWindow()
     {
@@ -29,6 +30,9 @@ public partial class HudWindow : Window
     public JobCard Start(string title, string detail, string? glyph)
     {
         var card = new JobCard(this) { Title = title, Detail = detail, Glyph = glyph ?? "\uE895" };
+        // Show up on whichever monitor you're working on, and stay there until the cards are gone.
+        if (_cards.Count == 0)
+            Native.GetCursorPos(out _anchor);
         _cards.Add(card);
         if (!IsVisible)
             Show();
@@ -45,9 +49,10 @@ public partial class HudWindow : Window
 
     void Reposition()
     {
-        var area = SystemParameters.WorkArea;
-        Left = area.Right - ActualWidth - 4;
-        Top = area.Bottom - ActualHeight - 4;
+        var area = Native.WorkAreaAt(_anchor);
+        Native.GetWindowRect(Handle, out var rect);
+        Native.SetWindowPos(Handle, Native.HWND_TOPMOST, area.Right - (rect.Right - rect.Left) - 4,
+            area.Bottom - (rect.Bottom - rect.Top) - 4, 0, 0, Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
     }
 
     void Card_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)

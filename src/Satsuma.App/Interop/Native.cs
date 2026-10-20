@@ -9,6 +9,9 @@ static partial class Native
     public const int WM_LBUTTONDOWN = 0x0201;
     public const int WM_LBUTTONUP = 0x0202;
 
+    public const int WM_QUIT = 0x0012;
+
+    public const int VK_LBUTTON = 0x01;
     public const int VK_SHIFT = 0x10;
     public const int VK_CONTROL = 0x11;
     public const int VK_MENU = 0x12;
@@ -59,6 +62,18 @@ static partial class Native
         public uint dwFlags;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MSG
+    {
+        public IntPtr hwnd;
+        public uint message;
+        public IntPtr wParam;
+        public IntPtr lParam;
+        public uint time;
+        public POINT pt;
+        public uint lPrivate;
+    }
+
     public delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
 
     [LibraryImport("user32.dll", EntryPoint = "SetWindowsHookExW", SetLastError = true)]
@@ -73,6 +88,19 @@ static partial class Native
 
     [LibraryImport("kernel32.dll", EntryPoint = "GetModuleHandleW", StringMarshalling = StringMarshalling.Utf16)]
     public static partial IntPtr GetModuleHandle(string? lpModuleName);
+
+    [LibraryImport("user32.dll", EntryPoint = "GetMessageW")]
+    public static partial int GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
+
+    [LibraryImport("user32.dll", EntryPoint = "DispatchMessageW")]
+    public static partial IntPtr DispatchMessage(ref MSG lpMsg);
+
+    [LibraryImport("user32.dll", EntryPoint = "PostThreadMessageW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool PostThreadMessage(uint idThread, int msg, IntPtr wParam, IntPtr lParam);
+
+    [LibraryImport("kernel32.dll")]
+    public static partial uint GetCurrentThreadId();
 
     [LibraryImport("user32.dll")]
     public static partial short GetAsyncKeyState(int vKey);

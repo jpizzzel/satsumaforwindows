@@ -39,7 +39,7 @@ sealed class AppSettings
 
     public OutputLocator Output() => new() { Folder = string.IsNullOrWhiteSpace(OutputFolder) ? null : OutputFolder };
 
-    public ConversionOptions Options() => new() { ImageQuality = ImageQuality };
+    public ConversionOptions Options() => new() { ImageQuality = Math.Clamp(ImageQuality, 1, 100) };
 
     public static AppSettings Load()
     {
@@ -60,7 +60,10 @@ sealed class AppSettings
         try
         {
             Directory.CreateDirectory(Folder);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+            // Write to a temp file and swap it in, so a crash halfway can't leave you with broken settings.
+            var temp = FilePath + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temp, FilePath, overwrite: true);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

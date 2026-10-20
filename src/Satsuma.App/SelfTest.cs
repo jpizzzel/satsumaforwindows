@@ -40,7 +40,7 @@ static class SelfTest
 
         var settings = new AppSettings();
         var hud = new HudWindow();
-        var catalog = App.CreateCatalog(hud);
+        var catalog = App.CreateCatalog();
         string Sample(string name) => Path.Combine(folder, name);
 
         var png = Sample("sample.png");
@@ -152,6 +152,9 @@ static class SelfTest
             using var tray = new TrayIcon(() => { }, _ => { }, () => { });
             return Task.FromResult("created");
         });
+
+        wheel.Close();
+        hud.Close();
 
         log.Add(failures == 0 ? "ALL PASSED" : $"{failures} FAILED");
         await File.WriteAllLinesAsync(Path.Combine(folder, "self-test.log"), log);

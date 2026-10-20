@@ -18,15 +18,17 @@ public partial class App : Application
     SettingsWindow? _settingsWindow;
     int _armCount;
 
+    const string OpenSettingsSignal = @"Local\Satsuma.OpenSettings";
+
     /// <summary>Core conversions plus the operations that need Windows: PDF rendering and the actions wheel.</summary>
-    internal static OperationCatalog CreateCatalog(HudWindow hud) => OperationCatalog.CreateDefault()
+    internal static OperationCatalog CreateCatalog() => OperationCatalog.CreateDefault()
         .Add(WheelMode.Convert, new PdfToImageOperation("PNG", "png"), new PdfToImageOperation("JPG", "jpg"))
         .Add(WheelMode.Actions,
             new CopyFilesAction(),
             new CutFilesAction(),
             new CopyPathAction(),
             new FloatAction(),
-            new ShareAction(hud),
+            new ShareAction(),
             new TerminalAction(),
             new RevealAction());
 
@@ -34,24 +36,44 @@ public partial class App : Application
     {
         base.OnStartup(e);
         DispatcherUnhandledException += OnUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += (_, args) => Log.Write($"Crashed: {args.ExceptionObject}");
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            Log.Write($"Unobserved: {args.Exception}");
+            args.SetObserved();
+        };
 
         if (e.Args is ["--self-test", var outputFolder, .. var rest])
         {
-            Shutdown(await SelfTest.RunAsync(outputFolder, rest.FirstOrDefault()));
+            try
+            {
+                Shutdown(await SelfTest.RunAsync(outputFolder, rest.FirstOrDefault()));
+            }
+            catch (Exception ex)
+            {
+                Log.Write($"Self-test blew up: {ex}");
+                Shutdown(2);
+            }
             return;
         }
 
         _singleInstance = new Mutex(true, @"Local\Satsuma.SingleInstance", out var isFirst);
         if (!isFirst)
         {
+            // Already running in the tray. Starting it again is how people look for the settings, so open them.
+            if (EventWaitHandle.TryOpenExisting(OpenSettingsSignal, out var signal))
+                signal.Set();
             Shutdown();
             return;
         }
+        var openSettings = new EventWaitHandle(false, EventResetMode.AutoReset, OpenSettingsSignal);
+        ThreadPool.RegisterWaitForSingleObject(openSettings,
+            (_, _) => Dispatcher.BeginInvoke(OpenSettings), null, Timeout.Infinite, executeOnlyOnce: false);
 
         _settings = AppSettings.Load();
         var hud = new HudWindow();
         var jobs = new JobRunner(_settings, hud);
-        _wheel = new WheelWindow(CreateCatalog(hud), _settings);
+        _wheel = new WheelWindow(CreateCatalog(), _settings);
         _wheel.Chosen += jobs.Run;
 
         _watcher = new DragWatcher(Dispatcher, () => _settings.ModeFor(
@@ -93,10 +115,21 @@ public partial class App : Application
 
     async void OnReleased()
     {
-        // The hook sees the button go up a moment before the drop reaches the wheel, so wait a bit before
-        // hiding it. If a new drag has already re-armed it, leave it alone.
+        if (_wheel is not { IsArmed: true })
+            return;
+
+        // Nothing with files ever reached the wheel (selecting text, a Ctrl+drag rubber band...), so get
+        // the invisible catcher out of the way right now before it eats the next click.
+        if (!_wheel.HasDragOver)
+        {
+            _wheel.Disarm();
+            return;
+        }
+
+        // Files were over the wheel when the button went up, and the drop lands a moment after the hook
+        // sees that. Give it time, then tidy up if it never came. A newer drag re-arming it is left alone.
         var armed = _armCount;
-        await Task.Delay(400);
+        await Task.Delay(1500);
         if (_wheel is { IsArmed: true } && armed == _armCount)
             _wheel.Disarm();
     }
@@ -119,6 +152,12 @@ public partial class App : Application
         _watcher?.Dispose();
         _tray?.Dispose();
         _singleInstance?.Dispose();
+
+        // Let go of any leftover WinRT objects (the PDF renderer especially) while Windows' graphics stack is
+        // still around. Left for process teardown, they crash the app on the way out (0xC000000D).
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
         base.OnExit(e);
     }
 

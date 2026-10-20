@@ -24,20 +24,36 @@ public partial class FloatWindow : Window
         Items.ItemsSource = _items;
         Add(paths);
         Native.MakeNonActivating(new WindowInteropHelper(this).EnsureHandle());
+        // Always say "copy". Leaving it up to Explorer can turn the drop into a move, and the originals vanish.
+        DragOver += (_, e) =>
+        {
+            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        };
         Drop += (_, e) =>
         {
             if (e.Data.GetData(DataFormats.FileDrop) is string[] files)
                 Add(files);
+            e.Effects = DragDropEffects.Copy;
+            e.Handled = true;
         };
     }
 
     public void ShowNearCursor()
     {
         Native.GetCursorPos(out var cursor);
-        var scale = Native.ScaleAt(cursor);
-        Left = cursor.X / scale + 12;
-        Top = cursor.Y / scale - 20;
+        Left = Top = -32000; // Off screen for the moment it takes to measure ourselves.
         Show();
+
+        // Work in physical pixels so it lands in the right spot even when monitors have different scaling,
+        // and keep it on screen.
+        var hwnd = new WindowInteropHelper(this).Handle;
+        Native.GetWindowRect(hwnd, out var rect);
+        var (width, height) = (rect.Right - rect.Left, rect.Bottom - rect.Top);
+        var area = Native.WorkAreaAt(cursor);
+        var x = Math.Clamp(cursor.X + 16, area.Left, Math.Max(area.Left, area.Right - width));
+        var y = Math.Clamp(cursor.Y - 24, area.Top, Math.Max(area.Top, area.Bottom - height));
+        Native.SetWindowPos(hwnd, Native.HWND_TOPMOST, x, y, 0, 0, Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
     }
 
     void Add(IEnumerable<string> paths)

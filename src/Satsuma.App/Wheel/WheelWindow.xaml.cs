@@ -47,6 +47,9 @@ public partial class WheelWindow : Window
 
     public bool IsArmed { get; private set; }
 
+    /// <summary>True while a drag with files is actually over the wheel, so a drop may still be on its way.</summary>
+    public bool HasDragOver { get; private set; }
+
     /// <summary>Files were dropped on an operation.</summary>
     public event Action<FileOperation, IReadOnlyList<string>>? Chosen;
 
@@ -60,7 +63,11 @@ public partial class WheelWindow : Window
         Native.MakeNonActivating(new WindowInteropHelper(this).EnsureHandle());
         DragEnter += OnDragEnter;
         DragOver += (_, e) => Track(e);
-        DragLeave += (_, _) => Hover(null);
+        DragLeave += (_, _) =>
+        {
+            HasDragOver = false;
+            Hover(null);
+        };
         Drop += OnDrop;
     }
 
@@ -93,6 +100,7 @@ public partial class WheelWindow : Window
     public void Disarm()
     {
         IsArmed = false;
+        HasDragOver = false;
         _files = null;
         Hide();
         Surface.Children.Clear();
@@ -141,6 +149,7 @@ public partial class WheelWindow : Window
                 return;
             }
         }
+        HasDragOver = IsArmed && _files is not null;
         Track(e);
     }
 
@@ -174,8 +183,9 @@ public partial class WheelWindow : Window
         var files = _files;
         var operations = _operations;
         Disarm();
+        // Run it after Drop returns. Explorer sits waiting inside the drop until we're done with it.
         if (hit is { } slot && files is not null && slot.Index < operations.Count)
-            Chosen?.Invoke(operations[slot.Index], files);
+            Dispatcher.BeginInvoke(() => Chosen?.Invoke(operations[slot.Index], files));
     }
 
     void Populate()

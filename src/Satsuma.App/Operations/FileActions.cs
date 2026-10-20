@@ -90,11 +90,11 @@ sealed class FloatAction() : FileAction("float", "Float", "\uE718", "Floating")
 }
 
 /// <summary>Opens the Windows share sheet (Nearby Sharing, Mail, Teams and so on).</summary>
-sealed class ShareAction(HudWindow hud) : FileAction("share", "Share", "\uE72D", "Sharing")
+sealed class ShareAction() : FileAction("share", "Share", "\uE72D", "Sharing")
 {
     public override async Task<IReadOnlyList<string>> RunAsync(JobContext context)
     {
-        await ShareSheet.ShowAsync(context.Inputs, hud.Handle);
+        await ShareSheet.ShowAsync(context.Inputs);
         return [];
     }
 }
