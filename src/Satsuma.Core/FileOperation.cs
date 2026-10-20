@@ -49,9 +49,10 @@ public abstract class PerFileOperation : FileOperation
         {
             context.Cancellation.ThrowIfCancellationRequested();
             var index = i;
+            // Forward straight away so reports can't arrive out of order and move the bar backwards.
             var fileProgress = context.Progress is null
                 ? null
-                : new Progress<double>(p => context.Progress.Report((index + Math.Clamp(p, 0, 1)) / count));
+                : new ForwardProgress(p => context.Progress.Report((index + Math.Clamp(p, 0, 1)) / count));
             outputs.Add(await RunOneAsync(context.Inputs[i], context, fileProgress));
             context.Progress?.Report((double)(i + 1) / count);
         }
@@ -59,4 +60,9 @@ public abstract class PerFileOperation : FileOperation
     }
 
     protected abstract Task<string> RunOneAsync(string input, JobContext context, IProgress<double>? progress);
+
+    sealed class ForwardProgress(Action<double> report) : IProgress<double>
+    {
+        public void Report(double value) => report(value);
+    }
 }

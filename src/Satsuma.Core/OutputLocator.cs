@@ -12,7 +12,7 @@ public sealed class OutputLocator
     /// </summary>
     public string For(string input, string extension, string? suffix = null)
     {
-        var name = Path.GetFileNameWithoutExtension(Path.TrimEndingDirectorySeparator(input));
+        var name = Stem(input);
         if (suffix is not null)
             name += $" ({suffix})";
         extension = extension.TrimStart('.');
@@ -38,10 +38,21 @@ public sealed class OutputLocator
     /// <summary>A new folder path for results that produce many files.</summary>
     public string FolderFor(string input, string? suffix = null)
     {
-        var name = Path.GetFileNameWithoutExtension(Path.TrimEndingDirectorySeparator(input));
+        var name = Stem(input);
         if (suffix is not null)
             name += $" ({suffix})";
         return Unique(Path.Combine(DirectoryFor(input), name), "");
+    }
+
+    // Folders keep their whole name ("release.v1.2"), and so do dotfiles like ".env".
+    static string Stem(string input)
+    {
+        input = Path.TrimEndingDirectorySeparator(input);
+        var name = Path.GetFileName(input);
+        if (Directory.Exists(input))
+            return name;
+        var stem = Path.GetFileNameWithoutExtension(input);
+        return stem.Length == 0 ? name : stem;
     }
 
     string DirectoryFor(string input)

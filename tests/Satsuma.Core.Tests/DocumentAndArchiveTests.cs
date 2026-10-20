@@ -1,8 +1,13 @@
 using System.Formats.Tar;
 using System.IO.Compression;
+using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using Satsuma.Core.Archives;
 using Satsuma.Core.Documents;
+using SharpCompress.Common;
+using SharpCompress.Compressors.BZip2;
+using SharpCompress.Writers;
+using SharpCompress.Writers.SevenZip;
 
 namespace Satsuma.Core.Tests;
 
@@ -121,5 +126,155 @@ public sealed class DocumentAndArchiveTests : IDisposable
 
         Assert.Equal(_files.PathOf("photos"), folder);
         Assert.Equal("tar!", File.ReadAllText(Path.Combine(folder, "a.txt")));
+    }
+
+    sealed class SynchronousProgress(Action<double> report) : IProgress<double>
+    {
+        public void Report(double value) => report(value);
+    }
+
+    [Fact]
+    public async Task Rotate_works_on_pdfs_locked_against_editing()
+    {
+        var input = _files.PathOf("locked.pdf");
+        using (var document = new PdfDocument())
+        {
+            document.AddPage();
+            document.AddPage();
+            document.SecuritySettings.OwnerPassword = "owner";
+            document.SecuritySettings.PermitModifyDocument = false;
+            document.Save(input);
+        }
+
+        var output = Assert.Single(await new PdfRotateOperation().RunAsync(_files.Context(input)));
+
+        using var result = PdfReader.Open(output, PdfDocumentOpenMode.Import);
+        Assert.Equal(2, result.PageCount);
+        Assert.All(result.Pages.Cast<PdfPage>(), p => Assert.Equal(90, p.Rotate));
+    }
+
+    string Folder(string name, int files)
+    {
+        var folder = Directory.CreateDirectory(_files.PathOf(name)).FullName;
+        for (var i = 0; i < files; i++)
+            File.WriteAllText(Path.Combine(folder, $"{i}.txt"), new string('x', 1000));
+        return folder;
+    }
+
+    [Fact]
+    public async Task Cancelled_zip_leaves_nothing_behind()
+    {
+        var a = Folder("a", 3);
+        var b = Folder("b", 3);
+        using var cancel = new CancellationTokenSource();
+        var context = new JobContext
+        {
+            Inputs = [a, b],
+            Output = new OutputLocator(),
+            Progress = new SynchronousProgress(_ => cancel.Cancel()),
+            Cancellation = cancel.Token,
+        };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new ZipOperation().RunAsync(context));
+
+        Assert.False(File.Exists(_files.PathOf("Archive.zip")));
+    }
+
+    [Fact]
+    public async Task Failed_zip_leaves_nothing_behind()
+    {
+        var note = _files.PathOf("note.txt");
+        File.WriteAllText(note, "hi");
+
+        await Assert.ThrowsAnyAsync<IOException>(() =>
+            new ZipOperation().RunAsync(_files.Context(note, _files.PathOf("gone.txt"))));
+
+        Assert.False(File.Exists(_files.PathOf("Archive.zip")));
+    }
+
+    [Fact]
+    public async Task Cancelled_extract_removes_the_half_done_folder()
+    {
+        var archive = _files.PathOf("many.zip");
+        ZipFile.CreateFromDirectory(Folder("many", 5), archive);
+        using var cancel = new CancellationTokenSource();
+        var context = new JobContext
+        {
+            Inputs = [archive],
+            Output = new OutputLocator(),
+            Progress = new SynchronousProgress(_ => cancel.Cancel()),
+            Cancellation = cancel.Token,
+        };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new ExtractOperation().RunAsync(context));
+
+        Assert.False(Directory.Exists(_files.PathOf("many (1)")));
+    }
+
+    [Fact]
+    public async Task Extract_refuses_absolute_paths_in_tarballs()
+    {
+        var target = Path.Combine(Path.GetDirectoryName(_files.Root)!, $"satsuma-escape-{Guid.NewGuid():N}.txt");
+        var archive = _files.PathOf("abs.tar");
+        using (var tar = new TarWriter(File.Create(archive)))
+        {
+            var entry = new PaxTarEntry(TarEntryType.RegularFile, target) { DataStream = new MemoryStream("gotcha"u8.ToArray()) };
+            tar.WriteEntry(entry);
+        }
+
+        try
+        {
+            await new ExtractOperation().RunAsync(_files.Context(archive));
+        }
+        catch (Exception)
+        {
+            // Throwing is fine, as long as nothing lands outside.
+        }
+
+        Assert.False(File.Exists(target));
+    }
+
+    [Theory]
+    [InlineData("gz")]
+    [InlineData("bz2")]
+    [InlineData("xz")]
+    public async Task Single_compressed_files_extract_to_the_file_inside(string extension)
+    {
+        var archive = _files.PathOf($"data.csv.{extension}");
+        var text = "a,b\n"u8.ToArray();
+        switch (extension)
+        {
+            case "gz":
+                using (var gz = new GZipStream(File.Create(archive), CompressionLevel.Fastest))
+                    gz.Write(text);
+                break;
+            case "bz2":
+                using (var bz = BZip2Stream.Create(File.Create(archive), SharpCompress.Compressors.CompressionMode.Compress, false))
+                    bz.Write(text);
+                break;
+            case "xz":
+                // "a,b\n" made with Python's lzma.compress, since there's no xz writer here.
+                File.WriteAllBytes(archive, Convert.FromBase64String(
+                    "/Td6WFoAAATm1rRGAgAhARYAAAB0L+WjAQADYSxiCgAPPyrsxd0zFgABHARvLJzBH7bzfQEAAAAABFla"));
+                break;
+        }
+
+        var output = Assert.Single(await new ExtractOperation().RunAsync(_files.Context(archive)));
+
+        Assert.Equal(_files.PathOf("data.csv"), output);
+        Assert.Equal(text, File.ReadAllBytes(output));
+    }
+
+    [Fact]
+    public async Task Extract_unpacks_7z()
+    {
+        var archive = _files.PathOf("bundle.7z");
+        using (var stream = File.Create(archive))
+        using (var writer = WriterFactory.OpenWriter(stream, ArchiveType.SevenZip, new SevenZipWriterOptions()))
+            writer.Write("docs/readme.txt", new MemoryStream("hi"u8.ToArray()));
+
+        var folder = Assert.Single(await new ExtractOperation().RunAsync(_files.Context(archive)));
+
+        Assert.Equal("hi", File.ReadAllText(Path.Combine(folder, "docs", "readme.txt")));
     }
 }

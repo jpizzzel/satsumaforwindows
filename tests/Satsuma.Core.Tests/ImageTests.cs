@@ -157,6 +157,122 @@ public sealed class ImageTests : IDisposable
         Assert.Equal(reports.Order(), reports);
     }
 
+    string MultiPageTiff(string name)
+    {
+        var path = _files.PathOf(name);
+        using var pages = new MagickImageCollection { new MagickImage(MagickColors.Red, 40, 30), new MagickImage(MagickColors.Blue, 80, 60) };
+        pages.Write(path, MagickFormat.Tiff);
+        return path;
+    }
+
+    [Fact]
+    public async Task Multi_page_tiff_keeps_every_page_as_pdf()
+    {
+        var output = await RunSingle(new ImageConvertOperation("PDF", "pdf", MagickFormat.Pdf), MultiPageTiff("scan.tif"));
+
+        using var document = PdfSharp.Pdf.IO.PdfReader.Open(output, PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import);
+        Assert.Equal(2, document.PageCount);
+    }
+
+    [Fact]
+    public async Task Rotating_a_multi_page_tiff_keeps_each_page_size()
+    {
+        var output = await RunSingle(new ImageRotateOperation(), MultiPageTiff("scan.tif"));
+
+        using var pages = new MagickImageCollection(output);
+        Assert.Equal([(30u, 40u), (60u, 80u)], pages.Select(p => (p.Width, p.Height)));
+    }
+
+    [Fact]
+    public async Task Psd_converts_from_its_flattened_picture_not_its_layers()
+    {
+        var input = _files.PathOf("layers.psd");
+        using (var layers = new MagickImageCollection
+        {
+            new MagickImage(MagickColors.Orange, 40, 40),
+            new MagickImage(MagickColors.Red, 20, 20),
+            new MagickImage(MagickColors.Blue, 10, 10),
+        })
+            layers.Write(input, MagickFormat.Psd);
+        using (var check = new MagickImageCollection(input))
+            Assert.True(check.Count > 1, "The sample PSD should have layers.");
+
+        var output = await RunSingle(new ImageConvertOperation("GIF", "gif", MagickFormat.Gif), input);
+
+        using var frames = new MagickImageCollection(output);
+        var frame = Assert.Single(frames);
+        Assert.Equal((40u, 40u), (frame.Width, frame.Height));
+    }
+
+    string MultiSizeIcon(string name)
+    {
+        var path = _files.PathOf(name);
+        using var image = new MagickImage(MagickColors.Orange, 64, 64);
+        image.Settings.SetDefine(MagickFormat.Icon, "auto-resize", "16,64,32");
+        image.Write(path, MagickFormat.Icon);
+        return path;
+    }
+
+    [Fact]
+    public async Task Icon_converts_from_its_biggest_size()
+    {
+        var output = await RunSingle(new ImageConvertOperation("GIF", "gif", MagickFormat.Gif), MultiSizeIcon("app.ico"));
+
+        using var frames = new MagickImageCollection(output);
+        var frame = Assert.Single(frames);
+        Assert.Equal((64u, 64u), (frame.Width, frame.Height));
+    }
+
+    [Fact]
+    public async Task Resizing_an_icon_keeps_all_its_sizes()
+    {
+        var input = MultiSizeIcon("app.ico");
+        using var before = new MagickImageCollection(input);
+
+        var output = await RunSingle(new ImageResizeOperation(50), input);
+
+        using var after = new MagickImageCollection(output);
+        Assert.Equal(before.Select(f => f.Width / 2).Order(), after.Select(f => f.Width).Order());
+    }
+
+    [Fact]
+    public async Task Wide_image_becomes_a_padded_square_icon()
+    {
+        var output = await RunSingle(new ImageConvertOperation("ICO", "ico", MagickFormat.Icon), _files.Image("wide.png", 64, 32));
+
+        using var sizes = new MagickImageCollection(output);
+        var biggest = sizes.MaxBy(f => f.Width)!;
+        Assert.Equal(biggest.Width, biggest.Height);
+        var pixels = biggest.GetPixels();
+        Assert.Equal(0, pixels.GetPixel(0, 0).ToColor()!.A);
+        Assert.Equal(255, pixels.GetPixel((int)biggest.Width / 2, (int)biggest.Height / 2).ToColor()!.A);
+    }
+
+    [Fact]
+    public async Task Compressing_an_optimized_animated_gif_does_not_grow_it()
+    {
+        var input = _files.PathOf("dot.gif");
+        using (var frames = new MagickImageCollection())
+        {
+            for (var i = 0; i < 10; i++)
+            {
+                var frame = new MagickImage("gradient:orange-purple", 200, 200) { AnimationDelay = 10 };
+                frame.Draw(new ImageMagick.Drawing.Drawables().FillColor(MagickColors.Green).Rectangle(i * 15, 20, i * 15 + 12, 32));
+                frames.Add(frame);
+            }
+            frames.Quantize(new QuantizeSettings { Colors = 64 });
+            frames.Optimize();
+            frames.Write(input);
+        }
+
+        var output = await RunSingle(new ImageCompressOperation(), input);
+
+        Assert.True(new FileInfo(output).Length <= new FileInfo(input).Length,
+            $"{new FileInfo(output).Length} bytes after, {new FileInfo(input).Length} before");
+        using var result = new MagickImageCollection(output);
+        Assert.Equal(10, result.Count);
+    }
+
     sealed class SynchronousProgress(Action<double> report) : IProgress<double>
     {
         public void Report(double value) => report(value);

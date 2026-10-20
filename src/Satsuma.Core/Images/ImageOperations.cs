@@ -5,7 +5,7 @@ namespace Satsuma.Core.Images;
 /// <summary>Converts images to another format, keeping animation where the target supports it.</summary>
 public sealed class ImageConvertOperation(string label, string extension, MagickFormat format) : PerFileOperation
 {
-    static readonly HashSet<MagickFormat> MultiFrame = [MagickFormat.Gif, MagickFormat.WebP, MagickFormat.Tiff];
+    static readonly HashSet<MagickFormat> MultiFrame = [MagickFormat.Gif, MagickFormat.WebP, MagickFormat.Tiff, MagickFormat.Pdf];
     static readonly HashSet<MagickFormat> NoAlpha = [MagickFormat.Jpeg, MagickFormat.Bmp];
 
     public override string Id => "image.convert." + extension;
@@ -23,13 +23,16 @@ public sealed class ImageConvertOperation(string label, string extension, Magick
         Task.Run(() =>
         {
             var output = context.Output.For(input, extension);
-            using var frames = new MagickImageCollection(input);
-            if (MultiFrame.Contains(format) && frames.Count > 1)
+            using var frames = ImageFrames.Read(input, keepIconSizes: false);
+            var animated = ImageFrames.IsAnimation(frames);
+            // A PDF gets every page of a TIFF, but a GIF turned into a PDF is just its first frame.
+            if (MultiFrame.Contains(format) && frames.Count > 1 && !(format == MagickFormat.Pdf && animated))
             {
-                frames.Coalesce();
+                if (animated)
+                    frames.Coalesce();
                 foreach (var frame in frames)
                     Prepare(frame, context);
-                frames.Write(output, format);
+                ImageFrames.Write(frames, output, format, animated);
             }
             else
             {
@@ -42,11 +45,19 @@ public sealed class ImageConvertOperation(string label, string extension, Magick
                 }
                 if (format == MagickFormat.Icon)
                 {
+                    // Icons are square, so pad wide or tall pictures with transparency instead of stretching them.
+                    if (image.Width != image.Height)
+                    {
+                        image.Alpha(AlphaAction.Set);
+                        image.BackgroundColor = MagickColors.Transparent;
+                        var side = Math.Max(image.Width, image.Height);
+                        image.Extent(side, side, Gravity.Center);
+                    }
                     if (image.Width > 256 || image.Height > 256)
                         image.Resize(256, 256);
                     image.Settings.SetDefine(MagickFormat.Icon, "auto-resize", "256,128,64,48,32,16");
                 }
-                image.Write(output, format);
+                ImageFrames.Write(image, output, format);
             }
             return output;
         }, context.Cancellation);
@@ -77,18 +88,91 @@ public abstract class ImageEditOperation : PerFileOperation
 
     protected abstract void Edit(IMagickImage<byte> image, JobContext context);
 
+    /// <summary>A chance to look at the saved file, e.g. to check it came out smaller.</summary>
+    protected virtual void Saved(string input, string output) { }
+
     protected override Task<string> RunOneAsync(string input, JobContext context, IProgress<double>? progress) =>
         Task.Run(() =>
         {
             var output = context.Output.For(input, Path.GetExtension(input), Suffix);
-            using var frames = new MagickImageCollection(input);
-            if (frames.Count > 1)
+            using var frames = ImageFrames.Read(input, keepIconSizes: true);
+            // Only animations need full frames. TIFF pages and icon sizes would get cropped to the first one.
+            var animated = ImageFrames.IsAnimation(frames);
+            if (animated)
                 frames.Coalesce();
             foreach (var frame in frames)
                 Edit(frame, context);
-            frames.Write(output);
+            ImageFrames.Write(frames, output, null, animated);
+            Saved(input, output);
             return output;
         }, context.Cancellation);
+}
+
+/// <summary>Reading and writing helpers for files that hold more than one picture.</summary>
+static class ImageFrames
+{
+    static readonly HashSet<MagickFormat> AnimationFormats = [MagickFormat.Gif, MagickFormat.WebP, MagickFormat.APng, MagickFormat.Mng];
+    static readonly HashSet<MagickFormat> IconFormats = [MagickFormat.Ico, MagickFormat.Icon, MagickFormat.Cur];
+
+    /// <summary>
+    /// Reads every frame, except a PSD keeps just its flattened picture (the rest are layers) and an icon
+    /// keeps just its biggest size unless <paramref name="keepIconSizes"/> is set.
+    /// </summary>
+    public static MagickImageCollection Read(string input, bool keepIconSizes)
+    {
+        var frames = new MagickImageCollection(input);
+        if (frames.Count < 2)
+            return frames;
+
+        var first = frames[0];
+        var keep = first.Format switch
+        {
+            MagickFormat.Psd or MagickFormat.Psb => first,
+            _ when IconFormats.Contains(first.Format) && !keepIconSizes => frames.MaxBy(f => (long)f.Width * f.Height)!,
+            _ => null,
+        };
+        if (keep is null)
+            return frames;
+
+        var single = new MagickImageCollection { keep.Clone() };
+        frames.Dispose();
+        return single;
+    }
+
+    public static bool IsAnimation(MagickImageCollection frames) =>
+        frames.Count > 1 && (AnimationFormats.Contains(frames[0].Format) || frames.Any(f => f.AnimationDelay > 0));
+
+    /// <summary>Writes the frames as <paramref name="format"/>, or in the format they were read as when it's null.</summary>
+    public static void Write(MagickImageCollection frames, string output, MagickFormat? format, bool animated)
+    {
+        format ??= frames[0].Format;
+        // Coalescing turns every frame into a full picture, which makes GIFs much bigger. Shrink them back.
+        if (animated && format == MagickFormat.Gif)
+        {
+            frames.Optimize();
+            frames.OptimizeTransparency();
+        }
+        WriteFile(output, stream => frames.Write(stream, format.Value));
+    }
+
+    public static void Write(IMagickImage<byte> image, string output, MagickFormat format) =>
+        WriteFile(output, stream => image.Write(stream, format));
+
+    // Goes through a stream because ImageMagick treats "%" in file names as a placeholder, so
+    // "photo (50%).gif" would end up somewhere else.
+    static void WriteFile(string output, Action<Stream> write)
+    {
+        try
+        {
+            using var stream = File.Create(output);
+            write(stream);
+        }
+        catch
+        {
+            File.Delete(output);
+            throw;
+        }
+    }
 }
 
 public sealed class ImageCompressOperation : ImageEditOperation
@@ -115,6 +199,14 @@ public sealed class ImageCompressOperation : ImageEditOperation
                 image.Quality = 70;
                 break;
         }
+    }
+
+    protected override void Saved(string input, string output)
+    {
+        // Some files (well-optimized GIFs, low-quality JPGs) can't get any smaller here. Hand back the original
+        // rather than a bigger file.
+        if (new FileInfo(output).Length > new FileInfo(input).Length)
+            File.Copy(input, output, overwrite: true);
     }
 }
 

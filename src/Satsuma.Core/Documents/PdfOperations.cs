@@ -74,9 +74,14 @@ public sealed class PdfRotateOperation : PerFileOperation
     protected override Task<string> RunOneAsync(string input, JobContext context, IProgress<double>? progress) =>
         Task.Run(() =>
         {
-            using var document = PdfReader.Open(input, PdfDocumentOpenMode.Modify);
-            foreach (var page in document.Pages)
-                page.Rotate = (page.Rotate + 90) % 360;
+            // Import mode still opens PDFs that are locked against editing, so copy the pages into a new one.
+            using var source = PdfReader.Open(input, PdfDocumentOpenMode.Import);
+            using var document = new PdfDocument();
+            foreach (var page in source.Pages)
+            {
+                var copy = document.AddPage(page);
+                copy.Rotate = (page.Rotate + 90) % 360;
+            }
             var output = context.Output.For(input, "pdf", "rotated");
             document.Save(output);
             return output;

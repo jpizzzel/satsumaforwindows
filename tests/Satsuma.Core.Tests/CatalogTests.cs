@@ -130,4 +130,76 @@ public sealed class CatalogTests : IDisposable
         Assert.Equal(Path.Combine(target, "photo.png"), locator.For(_files.PathOf("photo.heic"), "png"));
         Assert.True(Directory.Exists(target));
     }
+
+    [Fact]
+    public void Dotted_folders_and_dotfiles_keep_their_whole_name()
+    {
+        var folder = Directory.CreateDirectory(_files.PathOf("release.v1.2")).FullName;
+        var dotfile = _files.PathOf(".env");
+        File.WriteAllText(dotfile, "");
+        var locator = new OutputLocator();
+
+        Assert.Equal(_files.PathOf("release.v1.2.zip"), locator.For(folder, "zip"));
+        Assert.Equal(_files.PathOf(".env.zip"), locator.For(dotfile, "zip"));
+    }
+
+    string TransportStream(string name, int packetSize)
+    {
+        var bytes = new byte[packetSize * 2];
+        var sync = packetSize == 192 ? 4 : 0;
+        bytes[sync] = bytes[packetSize + sync] = 0x47;
+        File.WriteAllBytes(_files.PathOf(name), bytes);
+        return _files.PathOf(name);
+    }
+
+    [Fact]
+    public void Ts_files_are_video_only_when_they_look_like_video()
+    {
+        Assert.Equal(FileKind.Video, FileKinds.Of(TransportStream("clip.ts", 188)));
+        Assert.Equal(FileKind.Video, FileKinds.Of(TransportStream("clip.m2ts", 192)));
+        Assert.Equal(FileKind.Video, FileKinds.Of(TransportStream("camera.MTS", 192)));
+
+        var code = _files.PathOf("app.ts");
+        File.WriteAllText(code, "export const greeting = 'Good morning';\n" + new string(' ', 300));
+        Assert.Equal(FileKind.Unknown, FileKinds.Of(code));
+        Assert.Equal(FileKind.Unknown, FileKinds.Of(_files.PathOf("missing.ts")));
+        Assert.DoesNotContain("MP4", Labels(WheelMode.Convert, code));
+    }
+
+    [Fact]
+    public async Task Per_file_progress_arrives_in_order_straight_away()
+    {
+        var reports = new List<double>();
+        var context = new JobContext
+        {
+            Inputs = ["a", "b"],
+            Output = new OutputLocator(),
+            Progress = new SynchronousProgress(reports.Add),
+            Cancellation = TestContext.Current.CancellationToken,
+        };
+
+        await new SteppingOperation().RunAsync(context);
+
+        Assert.Equal([0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0], reports);
+    }
+
+    sealed class SteppingOperation : PerFileOperation
+    {
+        public override string Id => "test.steps";
+        public override string Label => "Steps";
+        public override bool AppliesTo(IReadOnlyList<string> inputs) => true;
+
+        protected override Task<string> RunOneAsync(string input, JobContext context, IProgress<double>? progress) =>
+            Task.Run(() =>
+            {
+                foreach (var step in (double[])[0.25, 0.5, 0.75])
+                    progress?.Report(step);
+                return input;
+            });
+    }
+
+    sealed class SynchronousProgress(Action<double> report) : IProgress<double>
+    {
+        public void Report(double value) => report(value);
+    }
 }

@@ -118,4 +118,83 @@ public sealed class MediaTests : IDisposable
         await Assert.ThrowsAsync<FfmpegException>(() => operation.RunAsync(_files.Context(input)));
         Assert.False(File.Exists(_files.PathOf("broken.mov")));
     }
+
+    string OddClip(string name, string size = "161x91") =>
+        _files.Media(name, "-f", "lavfi", "-i", $"testsrc=duration=0.4:size={size}:rate=5",
+            "-f", "lavfi", "-i", "sine=duration=0.4", "-shortest", "-c:v", "libx264", "-pix_fmt", "yuv444p");
+
+    [Theory]
+    [InlineData(WheelMode.Convert, "MP4")]
+    [InlineData(WheelMode.Convert, "MOV")]
+    [InlineData(WheelMode.Tools, "Compress")]
+    [InlineData(WheelMode.Tools, "Rotate")]
+    [InlineData(WheelMode.Tools, "720p")]
+    public async Task H264_outputs_handle_odd_frame_sizes(WheelMode mode, string label)
+    {
+        var output = await Run(mode, label, OddClip("odd.mkv"));
+
+        var size = Probe(output, "stream=width,height").Split('\n')[0].Split(',').Select(int.Parse).ToArray();
+        Assert.All(size, d => Assert.Equal(0, d % 2));
+    }
+
+    [Theory]
+    [InlineData("1600x900", "1280,720")]
+    [InlineData("900x1600", "720,1280")]
+    [InlineData("481x855", "480,854")]
+    [InlineData("320x240", "320,240")]
+    public async Task To_720p_shrinks_the_short_side_and_never_upscales(string size, string expected)
+    {
+        var input = _files.Media("in.mp4", "-f", "lavfi", "-i", $"testsrc=duration=0.2:size={size}:rate=5",
+            "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv444p");
+
+        var output = await Run(WheelMode.Tools, "720p", input);
+
+        Assert.Equal(expected, Probe(output, "stream=width,height"));
+    }
+
+    [Fact]
+    public async Task Normalize_keeps_a_normal_sample_rate()
+    {
+        var output = await Run(WheelMode.Tools, "Normalize", Tone("tone.wav"));
+
+        Assert.Equal("48000", Probe(output, "stream=sample_rate"));
+    }
+
+    [Fact]
+    public async Task Opus_accepts_side_surround_audio()
+    {
+        var input = _files.Media("surround.wav", "-f", "lavfi", "-i", "sine=duration=0.5",
+            "-af", "pan=5.1(side)|c0=c0|c1=c0|c2=c0|c3=c0|c4=c0|c5=c0");
+
+        var output = await Run(WheelMode.Convert, "OPUS", input);
+
+        Assert.Equal("6", Probe(output, "stream=channels"));
+    }
+
+    [Fact]
+    public async Task Silent_video_to_audio_says_there_is_no_audio()
+    {
+        var input = _files.Media("silent.mp4", "-f", "lavfi", "-i", "testsrc=duration=0.4:size=64x48:rate=5",
+            "-pix_fmt", "yuv420p");
+
+        var error = await Assert.ThrowsAsync<FfmpegException>(() => Run(WheelMode.Convert, "MP3", input));
+
+        Assert.Equal("This video has no audio track.", error.Message);
+        Assert.False(File.Exists(_files.PathOf("silent.mp3")));
+    }
+
+    [Fact]
+    public async Task Cancelling_stops_ffmpeg_and_leaves_no_output()
+    {
+        var input = _files.Media("long.mp4", "-f", "lavfi", "-i", "testsrc=duration=20:size=320x240:rate=25",
+            "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p");
+        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var operation = _catalog.For(WheelMode.Convert, [input]).Single(o => o.Label == "WEBM");
+        var context = new JobContext { Inputs = [input], Output = new OutputLocator(), Cancellation = cancel.Token };
+
+        cancel.CancelAfter(500);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => operation.RunAsync(context));
+
+        Assert.False(File.Exists(_files.PathOf("long.webm")));
+    }
 }

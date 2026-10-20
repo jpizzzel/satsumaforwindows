@@ -4,7 +4,11 @@ using System.Text.RegularExpressions;
 
 namespace Satsuma.Core.Media;
 
-public sealed class FfmpegException(string message) : Exception(message);
+public sealed class FfmpegException(string message) : Exception(message)
+{
+    /// <summary>The last lines ffmpeg wrote to stderr, when there are any.</summary>
+    public string ErrorOutput { get; init; } = "";
+}
 
 public static partial class Ffmpeg
 {
@@ -94,25 +98,42 @@ public static partial class Ffmpeg
         }
         catch (OperationCanceledException)
         {
-            process.Kill(entireProcessTree: true);
-            TryDelete(output);
+            // Windows keeps the file locked until ffmpeg has really gone, so wait for it before cleaning up.
+            try { process.Kill(entireProcessTree: true); }
+            catch (InvalidOperationException) { } // Already exited.
+            process.WaitForExit(5000);
+            try { await Task.WhenAll(readErrors, readProgress).WaitAsync(TimeSpan.FromSeconds(5)); }
+            catch (Exception) { } // We're cancelling anyway.
+            await TryDeleteAsync(output);
             throw;
         }
         await Task.WhenAll(readErrors, readProgress);
 
         if (process.ExitCode != 0)
         {
-            TryDelete(output);
+            await TryDeleteAsync(output);
             var reason = errorTail.LastOrDefault(l => l.Trim().Length > 0) ?? $"exit code {process.ExitCode}";
-            throw new FfmpegException($"ffmpeg failed: {reason.Trim()}");
+            throw new FfmpegException($"ffmpeg failed: {reason.Trim()}") { ErrorOutput = string.Join('\n', errorTail) };
         }
     }
 
-    static void TryDelete(string path)
+    static async Task TryDeleteAsync(string path)
     {
-        try { File.Delete(path); }
-        catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
+        // A virus scanner or the indexer can hold the file for a moment, so give it a few tries.
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                File.Delete(path);
+                return;
+            }
+            catch (IOException) when (attempt < 5)
+            {
+                await Task.Delay(100);
+            }
+            catch (IOException) { return; }
+            catch (UnauthorizedAccessException) { return; }
+        }
     }
 
     [GeneratedRegex(@"Duration:\s*(\d+:\d{2}:\d{2}(?:\.\d+)?)")]

@@ -30,6 +30,7 @@ public static class FileKinds
             ".tif", ".tiff", ".ico", ".svg", ".psd", ".tga", ".jxl", ".dng", ".cr2", ".nef", ".arw");
         Map(FileKind.Video, ".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v", ".wmv", ".flv", ".mpg", ".mpeg",
             ".3gp", ".ts", ".mts", ".m2ts");
+        // .ts is also TypeScript, so these are only video when the bytes say so. See Of.
         Map(FileKind.Audio, ".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".oga", ".opus", ".wma", ".aif",
             ".aiff", ".alac", ".amr");
         Map(FileKind.Pdf, ".pdf");
@@ -47,7 +48,33 @@ public static class FileKinds
     {
         if (Directory.Exists(path))
             return FileKind.Folder;
-        return ByExtension.GetValueOrDefault(Path.GetExtension(path), FileKind.Unknown);
+        var extension = Path.GetExtension(path);
+        if (TransportStreamExtensions.Contains(extension))
+            return LooksLikeTransportStream(path) ? FileKind.Video : FileKind.Unknown;
+        return ByExtension.GetValueOrDefault(extension, FileKind.Unknown);
+    }
+
+    static readonly HashSet<string> TransportStreamExtensions = new(StringComparer.OrdinalIgnoreCase) { ".ts", ".mts", ".m2ts" };
+
+    // MPEG-TS packets are 188 bytes and start with 0x47. Blu-ray and camera files (.m2ts, .mts) add a
+    // 4-byte timestamp first, so their packets are 192 bytes. Checking two packets keeps a TypeScript
+    // file that happens to start with "G" from looking like video.
+    static bool LooksLikeTransportStream(string path)
+    {
+        const byte Sync = 0x47;
+        try
+        {
+            Span<byte> head = stackalloc byte[197];
+            using var stream = File.OpenRead(path);
+            var read = stream.ReadAtLeast(head, head.Length, throwOnEndOfStream: false);
+            return (read > 188 && head[0] == Sync && head[188] == Sync)
+                || (read > 196 && head[4] == Sync && head[196] == Sync);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // Can't tell, so don't offer video tools for what might be source code.
+            return false;
+        }
     }
 
     /// <summary>True when every path is one of <paramref name="kinds"/>.</summary>
