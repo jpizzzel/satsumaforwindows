@@ -2,8 +2,17 @@ name: Build
 
 on:
   push:
+    branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   windows:
@@ -29,15 +38,24 @@ jobs:
             -Headers @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
           $asset = $release.assets |
             Where-Object name -Match '^ffmpeg-n(\d+(\.\d+)*)-latest-win64-gpl-[\d.]+\.zip$' |
-            Sort-Object { [version]($_.name -replace '^ffmpeg-n([\d.]+)-.*$', '$1') } -Descending |
+            Sort-Object {
+              # A version like n8 has no dot, and [version] needs at least two parts.
+              $v = $_.name -replace '^ffmpeg-n([\d.]+)-.*$', '$1'
+              if ($v -notmatch '\.') { $v += '.0' }
+              [version]$v
+            } -Descending |
             Select-Object -First 1
           if (-not $asset) { $asset = $release.assets | Where-Object name -EQ 'ffmpeg-master-latest-win64-gpl.zip' }
+          if (-not $asset) { throw "No ffmpeg build found in BtbN/FFmpeg-Builds latest release" }
           Write-Host "Using $($asset.name)"
+          "FFMPEG_ASSET=$($asset.name)" >> $env:GITHUB_ENV
+          "FFMPEG_URL=$($asset.browser_download_url)" >> $env:GITHUB_ENV
           $zip = "$env:RUNNER_TEMP\ffmpeg.zip"
           Invoke-WebRequest $asset.browser_download_url -OutFile $zip
           Expand-Archive $zip "$env:RUNNER_TEMP\ffmpeg"
           $bin = Get-ChildItem "$env:RUNNER_TEMP\ffmpeg" -Recurse -Filter ffmpeg.exe | Select-Object -First 1
           New-Item -ItemType Directory tools -Force | Out-Null
+          # ffprobe is only for the tests. The download doesn't ship it.
           Copy-Item $bin.FullName, (Join-Path $bin.DirectoryName ffprobe.exe) tools
           Copy-Item (Get-ChildItem "$env:RUNNER_TEMP\ffmpeg" -Recurse -Filter LICENSE.txt | Select-Object -First 1).FullName tools\FFMPEG-LICENSE.txt
           "SATSUMA_FFMPEG=$PWD\tools\ffmpeg.exe" >> $env:GITHUB_ENV
@@ -48,29 +66,30 @@ jobs:
       - name: Publish
         shell: pwsh
         run: |
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '0.0.0-dev' }
+          Write-Host "Version $version"
           dotnet publish src/Satsuma.App -c Release -r win-x64 --self-contained `
-            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none -o publish
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none `
+            -p:Version=$version -o publish
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           New-Item -ItemType Directory publish\tools -Force | Out-Null
-          Copy-Item tools\* publish\tools
-          Copy-Item README.md publish
-
-      - name: Which self-test group crashes on exit (temporary)
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          Remove-Item Env:SATSUMA_FFMPEG
-          $all = 'image', 'pdf', 'pdfsharp', 'media', 'wheel', 'hook', 'hud', 'tray'
-          $runs = @()
-          for ($i = 1; $i -le $all.Count; $i++) { $runs += ($all[0..($i - 1)] -join ',') }
-          foreach ($skip in $all) { $runs += (($all | Where-Object { $_ -ne $skip }) -join ',') }
-          $n = 0
-          foreach ($groups in $runs) {
-            $n++
-            $p = Start-Process publish\Satsuma.exe -ArgumentList "--self-test", "`"$env:RUNNER_TEMP\diag-$n`"", $groups -PassThru
-            $null = $p.Handle
-            $p.WaitForExit()
-            Write-Host "[$groups] -> exit $($p.ExitCode)"
-          }
+          Copy-Item tools\ffmpeg.exe, tools\FFMPEG-LICENSE.txt publish\tools
+          $ffmpegVersion = (& publish\tools\ffmpeg.exe -hide_banner -version | Select-Object -First 1)
+          @(
+            "Build: $env:FFMPEG_ASSET"
+            "Downloaded from: $env:FFMPEG_URL"
+            "Version: $ffmpegVersion"
+            ""
+            "This is an unmodified GPL build from https://github.com/BtbN/FFmpeg-Builds."
+            "Source code: https://ffmpeg.org and https://github.com/BtbN/FFmpeg-Builds"
+          ) | Set-Content publish\tools\FFMPEG-VERSION.txt -Encoding utf8
+          Get-Content publish\tools\FFMPEG-VERSION.txt
+          # Magick.NET's notice file has the ImageMagick license and the licenses of the libraries bundled with it.
+          $notice = Get-ChildItem "$env:USERPROFILE\.nuget\packages\magick.net-q8-anycpu" -Recurse -Filter Notice.txt |
+            Select-Object -First 1
+          if (-not $notice) { throw "Magick.NET Notice.txt not found in the NuGet cache" }
+          Copy-Item $notice.FullName publish\MAGICK-NET-NOTICE.txt
+          Copy-Item README.md, THIRD-PARTY-NOTICES.md publish
 
       - name: Self-test on Windows
         shell: pwsh
@@ -81,7 +100,7 @@ jobs:
           $p = Start-Process publish\Satsuma.exe -ArgumentList "--self-test", "`"$out`"" -PassThru
           $null = $p.Handle # without this PowerShell sometimes loses the exit code
           $p.WaitForExit()
-          Get-Content "$out\self-test.log"
+          Get-Content "$out\self-test.log" -ErrorAction Continue
           Write-Host "Exit code: $($p.ExitCode)"
           exit $p.ExitCode
 
@@ -114,6 +133,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           zip_name="Satsuma-${GITHUB_REF_NAME}-win-x64.zip"
+          rm -f "$zip_name"
           (cd Satsuma && zip -qr "../$zip_name" .)
-          gh release create "$GITHUB_REF_NAME" "$zip_name" --repo "$GITHUB_REPOSITORY" \
-            --title "Satsuma $GITHUB_REF_NAME" --generate-notes
+          # Re-running this job is safe: if the release already exists, just replace the zip.
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$zip_name" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            ffmpeg_build="$(sed -n 's/^Build: //p' Satsuma/tools/FFMPEG-VERSION.txt)"
+            printf '%s\n' \
+              "The zip includes an unmodified GPL build of FFmpeg ($ffmpeg_build) in the tools folder." \
+              "You can get its source from the FFmpeg project (https://ffmpeg.org) and BtbN/FFmpeg-Builds (https://github.com/BtbN/FFmpeg-Builds). FFMPEG-VERSION.txt in the tools folder names the exact build." \
+              > notes.md
+            gh release create "$GITHUB_REF_NAME" "$zip_name" --repo "$GITHUB_REPOSITORY" \
+              --title "Satsuma $GITHUB_REF_NAME" --notes-file notes.md --generate-notes
+          fi
