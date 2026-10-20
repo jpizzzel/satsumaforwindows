@@ -227,8 +227,8 @@
     open.hovered = index;
   }
 
-  function openWheel(file, mode, point, byClick) {
-    open = { file, mode, byClick, cx: 0, cy: 0, scale: 1 };
+  function openWheel(file, mode, point, byClick, byKeyboard = false) {
+    open = { file, mode, byClick, byKeyboard, cx: 0, cy: 0, scale: 1 };
     drawWheel();
     wheel.removeAttribute("hidden"); // SVG elements have no .hidden property, so use the attribute.
     wheel.classList.remove("opening");
@@ -236,10 +236,11 @@
     wheel.classList.add("opening");
     place(point);
     scene.dataset.busy = "true";
-    if (byClick) wheel.querySelector(".slice")?.focus({ preventScroll: true });
+    if (byKeyboard) wheel.querySelector(".slice")?.focus({ preventScroll: true });
   }
   function place(point) {
-    const size = wheel.getBoundingClientRect().width;
+    // The layout size, not getBoundingClientRect: that one is shrunk while the opening animation plays.
+    const size = parseFloat(getComputedStyle(wheel).width);
     const w = scene.clientWidth, h = scene.clientHeight;
     // Keep the whole wheel inside the picture, the same way the app keeps it on screen.
     const cx = w <= size ? w / 2 : Math.min(Math.max(point.x, size / 2), w - size / 2);
@@ -250,7 +251,7 @@
   }
   function closeWheel() {
     if (!open) return;
-    const back = open.byClick ? tileFor(open.file) : null;
+    const back = open.byKeyboard ? tileFor(open.file) : null;
     open = null;
     wheel.setAttribute("hidden", "");
     wheel.replaceChildren();
@@ -457,6 +458,10 @@
   list.addEventListener("pointercancel", (e) => endDrag(e, true));
   list.addEventListener("lostpointercapture", (e) => endDrag(e, true));
 
+  // Remember when Enter or Space opened a file, so only keyboard users get focus moved into the wheel.
+  let openedByKey = false;
+  list.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") openedByKey = true; });
+
   // A plain click (or Enter) opens the wheel on the file, for anyone not dragging.
   list.addEventListener("click", (e) => {
     const tile = e.target.closest(".tile");
@@ -464,7 +469,8 @@
     if (swallowClick) { swallowClick = false; return; }
     const rect = tile.getBoundingClientRect(), sceneRect = scene.getBoundingClientRect();
     const point = { x: rect.left + rect.width / 2 - sceneRect.left, y: rect.top + rect.height / 2 - sceneRect.top };
-    openWheel(fileFrom(tile), currentMode() || "convert", point, true);
+    openWheel(fileFrom(tile), currentMode() || "convert", point, true, openedByKey);
+    openedByKey = false;
   });
   wheel.addEventListener("pointermove", (e) => { if (open?.byClick) hover(hitTest(scenePoint(e))); });
   scene.addEventListener("pointerdown", (e) => {
