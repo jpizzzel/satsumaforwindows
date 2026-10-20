@@ -59,11 +59,17 @@ jobs:
         continue-on-error: true
         run: |
           Remove-Item Env:SATSUMA_FFMPEG
-          foreach ($g in 'none', 'image', 'pdf', 'pdfsharp', 'media', 'wheel', 'hook', 'hud', 'tray') {
-            $p = Start-Process publish\Satsuma.exe -ArgumentList "--self-test", "`"$env:RUNNER_TEMP\diag-$g`"", $g -PassThru
+          $all = 'image', 'pdf', 'pdfsharp', 'media', 'wheel', 'hook', 'hud', 'tray'
+          $runs = @()
+          for ($i = 1; $i -le $all.Count; $i++) { $runs += ($all[0..($i - 1)] -join ',') }
+          foreach ($skip in $all) { $runs += (($all | Where-Object { $_ -ne $skip }) -join ',') }
+          $n = 0
+          foreach ($groups in $runs) {
+            $n++
+            $p = Start-Process publish\Satsuma.exe -ArgumentList "--self-test", "`"$env:RUNNER_TEMP\diag-$n`"", $groups -PassThru
             $null = $p.Handle
             $p.WaitForExit()
-            Write-Host "$g -> exit $($p.ExitCode)"
+            Write-Host "[$groups] -> exit $($p.ExitCode)"
           }
 
       - name: Self-test on Windows
