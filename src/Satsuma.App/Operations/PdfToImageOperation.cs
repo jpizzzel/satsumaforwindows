@@ -21,7 +21,12 @@ sealed class PdfToImageOperation(string label, string extension) : PerFileOperat
 
     public override bool AppliesTo(IReadOnlyList<string> inputs) => FileKinds.All(inputs, FileKind.Pdf);
 
-    protected override async Task<string> RunOneAsync(string input, JobContext context, IProgress<double>? progress)
+    // Always render on a background thread. The PDF objects belong to whichever thread made them, and if
+    // that's the UI thread they outlive it and crash the app on the way out.
+    protected override Task<string> RunOneAsync(string input, JobContext context, IProgress<double>? progress) =>
+        Task.Run(() => RenderAsync(input, context, progress), context.Cancellation);
+
+    async Task<string> RenderAsync(string input, JobContext context, IProgress<double>? progress)
     {
         var file = await StorageFile.GetFileFromPathAsync(Path.GetFullPath(input));
         var document = await PdfDocument.LoadFromFileAsync(file);

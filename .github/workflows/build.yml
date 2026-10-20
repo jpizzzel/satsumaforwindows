@@ -94,6 +94,13 @@ jobs:
       - name: Self-test on Windows
         shell: pwsh
         run: |
+          # If it crashes, have Windows keep a dump so the next step can show where.
+          $dumps = "$PWD\dumps"
+          New-Item -ItemType Directory $dumps -Force | Out-Null
+          $key = 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\Satsuma.exe'
+          New-Item $key -Force | Out-Null
+          Set-ItemProperty $key DumpFolder $dumps
+          Set-ItemProperty $key DumpType 1
           # Make the published app use its own bundled ffmpeg, not the one the tests used.
           Remove-Item Env:SATSUMA_FFMPEG
           $out = "$PWD\self-test"
@@ -103,6 +110,22 @@ jobs:
           Get-Content "$out\self-test.log" -ErrorAction Continue
           Write-Host "Exit code: $($p.ExitCode)"
           exit $p.ExitCode
+
+      - name: Show the crash stack
+        if: failure()
+        shell: pwsh
+        run: |
+          $dump = Get-ChildItem dumps -Filter *.dmp -ErrorAction SilentlyContinue | Select-Object -First 1
+          $cdb = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers\x64\cdb.exe" -ErrorAction SilentlyContinue
+          if (-not $dump) { Write-Host "No crash dump was written."; exit 0 }
+          if (-not $cdb) { Write-Host "cdb isn't installed, so only the dump is uploaded."; exit 0 }
+          & $cdb.FullName -z $dump.FullName -c ".symfix; .reload; .ecxr; kn 40; !analyze -v; q" | Select-Object -Last 150
+
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: crash-dump
+          path: dumps
 
       - uses: actions/upload-artifact@v5
         with:
