@@ -102,6 +102,13 @@ static partial class Native
     [LibraryImport("kernel32.dll")]
     public static partial uint GetCurrentThreadId();
 
+    [LibraryImport("kernel32.dll")]
+    public static partial IntPtr GetCurrentProcess();
+
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool TerminateProcess(IntPtr hProcess, uint uExitCode);
+
     [LibraryImport("user32.dll")]
     public static partial short GetAsyncKeyState(int vKey);
 

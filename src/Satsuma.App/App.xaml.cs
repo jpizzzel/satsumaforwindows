@@ -152,13 +152,12 @@ public partial class App : Application
         _watcher?.Dispose();
         _tray?.Dispose();
         _singleInstance?.Dispose();
-
-        // Let go of any leftover WinRT objects (the PDF renderer especially) while Windows' graphics stack is
-        // still around. Left for process teardown, they crash the app on the way out (0xC000000D).
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
         base.OnExit(e);
+
+        // Windows' PDF renderer keeps a graphics device in a static that it destroys while its DLL unloads. On the
+        // software renderer (VMs, Remote Desktop, CI) that crashes with 0xC000000D, because the thread pool it
+        // needs is already gone. Everything of ours is saved by now, so end the process before DLL unload runs.
+        Native.TerminateProcess(Native.GetCurrentProcess(), (uint)e.ApplicationExitCode);
     }
 
     static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
