@@ -12,18 +12,30 @@ jobs:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
       - name: Download ffmpeg
         shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           # GPL build from BtbN/FFmpeg-Builds. It ships as a separate program that Satsuma runs, not linked in.
+          # Asset names follow the FFmpeg release (ffmpeg-n7.1-latest-win64-gpl-7.1.zip...), so pick the newest
+          # stable one rather than hard-coding a version that will eventually disappear.
+          $release = Invoke-RestMethod "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest" `
+            -Headers @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
+          $asset = $release.assets |
+            Where-Object name -Match '^ffmpeg-n(\d+(\.\d+)*)-latest-win64-gpl-[\d.]+\.zip$' |
+            Sort-Object { [version]($_.name -replace '^ffmpeg-n([\d.]+)-.*$', '$1') } -Descending |
+            Select-Object -First 1
+          if (-not $asset) { $asset = $release.assets | Where-Object name -EQ 'ffmpeg-master-latest-win64-gpl.zip' }
+          Write-Host "Using $($asset.name)"
           $zip = "$env:RUNNER_TEMP\ffmpeg.zip"
-          Invoke-WebRequest "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-win64-gpl-7.1.zip" -OutFile $zip
+          Invoke-WebRequest $asset.browser_download_url -OutFile $zip
           Expand-Archive $zip "$env:RUNNER_TEMP\ffmpeg"
           $bin = Get-ChildItem "$env:RUNNER_TEMP\ffmpeg" -Recurse -Filter ffmpeg.exe | Select-Object -First 1
           New-Item -ItemType Directory tools -Force | Out-Null
@@ -53,12 +65,12 @@ jobs:
           Get-Content "$out\self-test.log"
           exit $p.ExitCode
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: Satsuma-win-x64
           path: publish
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: self-test
