@@ -70,7 +70,7 @@ You'll need Windows 10 (1809 or newer) or Windows 11 on an x64 PC. Windows 11 on
 Satsuma through its built-in x64 emulation.
 
 Grab it from [satsumaforwindows.vercel.app](https://satsumaforwindows.vercel.app/) or this repo's
-[Releases page](https://github.com/jpizzzel/tangerineforwindows/releases/latest). Every version has a zip called
+[Releases page](https://github.com/jpizzzel/satsumaforwindows/releases/latest). Every version has a zip called
 something like `Satsuma-v0.1.0-win-x64.zip`.
 
 1. Download the zip.

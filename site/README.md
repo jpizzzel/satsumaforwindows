@@ -14,14 +14,15 @@ og.png                           the picture link previews show
 
 1. In Vercel, add a new project from this repo.
 2. Set **Root Directory** to `site`. Leave the framework preset on "Other" and the build command empty.
-3. While the repo is private, add an environment variable called `GITHUB_TOKEN`:
+3. Add an environment variable called `GITHUB_TOKEN`:
    - On GitHub go to Settings, Developer settings, Personal access tokens, Fine-grained tokens, and make a new one.
-   - Repository access: only `tangerineforwindows`.
+   - Repository access: only `satsumaforwindows`.
    - Permissions: Contents, read-only. That's all it needs.
    - Paste it into Vercel as `GITHUB_TOKEN` and redeploy.
-4. Optional: `GITHUB_REPO` if the releases ever move to a different repo (defaults to `jpizzzel/tangerineforwindows`).
+4. Optional: `GITHUB_REPO` if the releases ever move to a different repo (defaults to `jpizzzel/satsumaforwindows`).
 
-Once the repo is public you can delete the token. The download link keeps working either way.
+Keep the token even though the repo is public. Without it GitHub only allows 60 requests an hour, shared by
+everyone on Vercel's servers, so downloads could start failing on a busy day. With it the limit is 5,000.
 
 ## How the download works
 

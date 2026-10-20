@@ -1,11 +1,12 @@
 // Shared bits for talking to GitHub Releases. Vercel doesn't turn files starting with "_" into endpoints.
 //
 // Environment variables (set them in the Vercel project settings):
-//   GITHUB_REPO   owner/name of the repo with the releases. Defaults to jpizzzel/tangerineforwindows.
-//   GITHUB_TOKEN  needed while the repo is private. A fine-grained token with read-only "Contents"
-//                 access to just that repo is enough. Leave it out once the repo is public.
+//   GITHUB_REPO   owner/name of the repo with the releases. Defaults to jpizzzel/satsumaforwindows.
+//   GITHUB_TOKEN  recommended. Required for a private repo, and for a public one it lifts GitHub's limit from
+//                 60 requests an hour (shared across Vercel's servers) to 5,000. A fine-grained token with
+//                 read-only "Contents" access to just that repo is enough.
 
-const REPO = process.env.GITHUB_REPO || "jpizzzel/tangerineforwindows";
+const REPO = process.env.GITHUB_REPO || "jpizzzel/satsumaforwindows";
 
 function headers(extra = {}) {
   const h = {
