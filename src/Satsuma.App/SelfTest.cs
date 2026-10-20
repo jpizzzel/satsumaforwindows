@@ -15,14 +15,18 @@ namespace Satsuma.App;
 /// </summary>
 static class SelfTest
 {
-    public static async Task<int> RunAsync(string folder)
+    /// <param name="only">Comma-separated groups to run (image, pdf, pdfsharp, media, wheel, hook, hud, tray). Null runs everything.</param>
+    public static async Task<int> RunAsync(string folder, string? only = null)
     {
+        var groups = only?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         Directory.CreateDirectory(folder);
         var log = new List<string>();
         var failures = 0;
 
-        async Task Check(string name, Func<Task<string>> step)
+        async Task Check(string group, string name, Func<Task<string>> step)
         {
+            if (groups is not null && !groups.Contains(group))
+                return;
             try
             {
                 log.Add($"PASS {name}: {await step()}");
@@ -60,20 +64,20 @@ static class SelfTest
             return Path.GetFileName(output);
         }
 
-        await Check("catalog", () => Task.FromResult(string.Join("; ", Enum.GetValues<WheelMode>().Select(m =>
+        await Check("image", "catalog", () => Task.FromResult(string.Join("; ", Enum.GetValues<WheelMode>().Select(m =>
             $"{m}[png]={string.Join(",", catalog.For(m, [png]).Select(o => o.Label))}"))));
-        await Check("png to jpg", () => Convert(WheelMode.Convert, "JPG", png));
-        await Check("png to webp", () => Convert(WheelMode.Convert, "WEBP", png));
-        await Check("heic writable", () => Task.FromResult(
+        await Check("image", "png to jpg", () => Convert(WheelMode.Convert, "JPG", png));
+        await Check("image", "png to webp", () => Convert(WheelMode.Convert, "WEBP", png));
+        await Check("image", "heic writable", () => Task.FromResult(
             catalog.For(WheelMode.Convert, [png]).Any(o => o.Label == "HEIC") ? "yes" : "no (HEIC hidden from the wheel)"));
-        await Check("pdf to png (Windows.Data.Pdf)", async () =>
+        await Check("pdf", "pdf to png (Windows.Data.Pdf)", async () =>
         {
             var output = await Convert(WheelMode.Convert, "PNG", pdf);
             var pages = Directory.GetFiles(Sample(output));
             using var first = new MagickImage(pages.Order().First());
             return $"{pages.Length} pages, first is {first.Width}x{first.Height}";
         });
-        await Check("pdf merge", async () =>
+        await Check("pdfsharp", "pdf merge", async () =>
         {
             var merge = catalog.For(WheelMode.Tools, [pdf, pdf]).Single(o => o.Label == "Merge");
             return Path.GetFileName((await merge.RunAsync(new JobContext { Inputs = [pdf, pdf], Output = settings.Output() })).Single());
@@ -84,7 +88,7 @@ static class SelfTest
         if (ffmpeg is not null)
         {
             var clip = Sample("clip.mp4");
-            await Check("make sample video", async () =>
+            await Check("media", "make sample video", async () =>
             {
                 var start = new System.Diagnostics.ProcessStartInfo(ffmpeg) { CreateNoWindow = true };
                 foreach (var arg in (string[])["-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc=duration=2:size=320x240:rate=15",
@@ -94,13 +98,13 @@ static class SelfTest
                 await process.WaitForExitAsync();
                 return $"exit {process.ExitCode}";
             });
-            await Check("mp4 to gif", () => Convert(WheelMode.Convert, "GIF", clip));
-            await Check("mp4 to mp3", () => Convert(WheelMode.Convert, "MP3", clip));
-            await Check("mp4 compress", () => Convert(WheelMode.Tools, "Compress", clip));
+            await Check("media", "mp4 to gif", () => Convert(WheelMode.Convert, "GIF", clip));
+            await Check("media", "mp4 to mp3", () => Convert(WheelMode.Convert, "MP3", clip));
+            await Check("media", "mp4 compress", () => Convert(WheelMode.Tools, "Compress", clip));
         }
 
         var wheel = new WheelWindow(catalog, settings);
-        await Check("wheel previews", () =>
+        await Check("wheel", "wheel previews", () =>
         {
             var shown = new List<string>();
             foreach (var (name, files, mode, hover) in new (string, string[], WheelMode, int)[]
@@ -116,7 +120,7 @@ static class SelfTest
             }
             return Task.FromResult(string.Join(" | ", shown));
         });
-        await Check("wheel shows under cursor", () =>
+        await Check("wheel", "wheel shows under cursor", () =>
         {
             Native.GetCursorPos(out var cursor);
             wheel.Arm(WheelMode.Convert, cursor);
@@ -129,12 +133,12 @@ static class SelfTest
                 throw new InvalidOperationException($"visible={visible} rect={rect.Left},{rect.Top},{rect.Right},{rect.Bottom} cursor={cursor.X},{cursor.Y}");
             return Task.FromResult($"centered at {cursor.X},{cursor.Y}, {rect.Right - rect.Left}px wide");
         });
-        await Check("mouse hook", () =>
+        await Check("hook", "mouse hook", () =>
         {
             using var watcher = new DragWatcher(System.Windows.Threading.Dispatcher.CurrentDispatcher, () => null);
             return Task.FromResult("installed and removed");
         });
-        await Check("hud card", async () =>
+        await Check("hud", "hud card", async () =>
         {
             var card = hud.Start("Converting to PNG", "sample.heic", null);
             card.Report(0.5);
@@ -143,7 +147,7 @@ static class SelfTest
             card.Dismiss();
             return "shown and dismissed";
         });
-        await Check("tray icon", () =>
+        await Check("tray", "tray icon", () =>
         {
             using var tray = new TrayIcon(() => { }, _ => { }, () => { });
             return Task.FromResult("created");

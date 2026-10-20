@@ -35,9 +35,9 @@ public partial class App : Application
         base.OnStartup(e);
         DispatcherUnhandledException += OnUnhandledException;
 
-        if (e.Args is ["--self-test", var outputFolder])
+        if (e.Args is ["--self-test", var outputFolder, .. var rest])
         {
-            Shutdown(await SelfTest.RunAsync(outputFolder));
+            Shutdown(await SelfTest.RunAsync(outputFolder, rest.FirstOrDefault()));
             return;
         }
 

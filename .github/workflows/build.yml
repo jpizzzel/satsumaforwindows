@@ -54,6 +54,18 @@ jobs:
           Copy-Item tools\* publish\tools
           Copy-Item README.md publish
 
+      - name: Which self-test group crashes on exit (temporary)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Remove-Item Env:SATSUMA_FFMPEG
+          foreach ($g in 'none', 'image', 'pdf', 'pdfsharp', 'media', 'wheel', 'hook', 'hud', 'tray') {
+            $p = Start-Process publish\Satsuma.exe -ArgumentList "--self-test", "`"$env:RUNNER_TEMP\diag-$g`"", $g -PassThru
+            $null = $p.Handle
+            $p.WaitForExit()
+            Write-Host "$g -> exit $($p.ExitCode)"
+          }
+
       - name: Self-test on Windows
         shell: pwsh
         run: |
