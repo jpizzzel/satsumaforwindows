@@ -20,6 +20,7 @@ app is described. None of its code or artwork is in here.
 ## What's on the wheels
 
 ### Shift: convert
+<img width="302" height="307" alt="image" src="https://github.com/user-attachments/assets/f5b822a3-e91e-4f7a-86a0-25ccf69d48f1" />
 
 Images (JPG, PNG, WEBP, HEIC/HEIF, AVIF, JPEG XL, GIF, BMP, TIFF, ICO, SVG, PSD, TGA, and camera RAW from Sony,
 Nikon and Canon (CR2) plus DNG) can become JPG, PNG, WEBP, AVIF, GIF, BMP, TIFF, ICO or PDF. HEIC output shows
@@ -39,6 +40,7 @@ A few small things it handles for you: animated GIFs stay animated as WEBP, tran
 background when they become JPGs, and photos get rotated the right way up before they're saved.
 
 ### Ctrl: tools
+<img width="316" height="307" alt="image" src="https://github.com/user-attachments/assets/4942f588-ecc1-454d-8666-3c9de4ac855a" />
 
 | Files | Tools |
 |-------|-------|
