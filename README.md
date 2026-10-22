@@ -17,8 +17,6 @@ It all runs on your machine. Nothing gets uploaded anywhere.
 Satsuma isn't affiliated with Tangerine or LEAP STUDIO. I rebuilt the idea from scratch based on how the Mac
 app is described. None of its code or artwork is in here.
 
-<img width="397" height="398" alt="image" src="https://github.com/user-attachments/assets/8c33d857-b9ef-41c3-845c-391c3d06c461" />
-
 ## What's on the wheels
 
 ### Shift: convert
@@ -52,6 +50,7 @@ background when they become JPGs, and photos get rotated the right way up before
 | Anything, folders too | Zip it |
 
 ### Alt: actions
+<img width="397" height="398" alt="image" src="https://github.com/user-attachments/assets/8c33d857-b9ef-41c3-845c-391c3d06c461" />
 
 Copy and Move put the files on your clipboard, so you can paste them into any Explorer window (Move cuts
 them). Copy path gives you the full quoted path, same as Explorer's "Copy as path". Float parks the files in a
