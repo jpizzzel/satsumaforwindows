@@ -16,8 +16,8 @@ It all runs on your machine. Nothing gets uploaded anywhere.
 
 Satsuma isn't affiliated with Tangerine or LEAP STUDIO. I rebuilt the idea from scratch based on how the Mac
 app is described. None of its code or artwork is in here.
-<img width="397" height="398" alt="image" src="https://github.com/user-attachments/assets/8c33d857-b9ef-41c3-845c-391c3d06c461" />
 
+<img width="397" height="398" alt="image" src="https://github.com/user-attachments/assets/8c33d857-b9ef-41c3-845c-391c3d06c461" />
 
 ## What's on the wheels
 
