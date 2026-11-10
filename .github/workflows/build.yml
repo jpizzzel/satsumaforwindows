@@ -34,9 +34,9 @@ jobs:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -134,18 +134,18 @@ jobs:
           if (-not $cdb) { Write-Host "cdb isn't installed, so only the dump is uploaded."; exit 0 }
           & $cdb.FullName -z $dump.FullName -c ".symfix; .reload; .ecxr; kn 40; !analyze -v; q" | Select-Object -Last 150
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: crash-dump
           path: dumps
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: Satsuma-win-x64
           path: publish
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: self-test
@@ -159,7 +159,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: Satsuma-win-x64
           path: Satsuma
